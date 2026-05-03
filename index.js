@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const { 
   Client, 
   GatewayIntentBits, 
@@ -8,7 +10,26 @@ const {
 } = require('discord.js');
 
 const { REST } = require('@discordjs/rest');
+const mongoose = require('mongoose');
 
+// ================= MONGODB =================
+console.log('URL Mongo:', process.env.MONGO_URL);
+
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log('🟢 MongoDB conectado'))
+  .catch(err => console.log('❌ ERRO MONGO:', err));
+
+// ================= CONFIG =================
+const token = process.env.TOKEN;
+
+const clientId = '1499822762590736586';
+const guildId = '1334696250070663231';
+
+const welcomeChannelId = '1499879825006002216';
+const exitChannelId = '1499886649234948106';
+const autoRoleId = '1334697676679151626';
+
+// ================= CLIENT =================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -18,16 +39,7 @@ const client = new Client({
   ]
 });
 
-// ================= CONFIG =================
-const token = process.env.MTQ5OTgyMjc2MjU5MDczNjU4Ng.GCyIPu.sMpHoqbsTGnwBpipD05R7ZFVVNRJZ5YedBgDk8;
-const clientId = '1499822762590736586';
-const guildId = '1334696250070663231';
-
-const welcomeChannelId = '1499879825006002216';
-const exitChannelId = '1499886649234948106';
-const autoRoleId = '1334697676679151626';
-
-// ================= GIFS (FUNCIONANDO EM EMBED) =================
+// ================= GIFS =================
 const gifsEntrada = [
   'https://media.tenor.com/Wz1sV7R6C6QAAAAC/anime-welcome.gif',
   'https://media.tenor.com/8QxXnVQZsQkAAAAC/anime-hi.gif'
@@ -53,6 +65,7 @@ const commands = [
        .setRequired(true)
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+
 ].map(c => c.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(token);
@@ -73,7 +86,6 @@ const rest = new REST({ version: '10' }).setToken(token);
 client.on('guildMemberAdd', async member => {
   console.log(`➡️ ${member.user.tag} entrou`);
 
-  // Cargo automático
   try {
     const cargo = member.guild.roles.cache.get(autoRoleId);
     if (cargo) {
@@ -84,9 +96,8 @@ client.on('guildMemberAdd', async member => {
     console.log('❌ Erro ao dar cargo:', err);
   }
 
-  // Canal
   const canal = member.guild.channels.cache.get(welcomeChannelId);
-  if (!canal) return console.log('❌ Canal de entrada não encontrado');
+  if (!canal) return;
 
   const gif = gifsEntrada[Math.floor(Math.random() * gifsEntrada.length)];
 
@@ -99,7 +110,7 @@ client.on('guildMemberAdd', async member => {
     .setDescription(
       `✦ **Bem-vindo(a) ao Noctra Core** ${member}\n\n` +
       `🎮 Pegue seus cargos e mergulhe no servidor\n` +
-      `🌙 Aqui a vibe é gameplay, anime e resenha`
+      `🌙 Aqui é anime, manhwa e gameplay`
     )
     .setImage(gif)
     .setFooter({ text: 'Noctra Core • Stay connected' })
@@ -113,7 +124,7 @@ client.on('guildMemberRemove', async member => {
   console.log(`⬅️ ${member.user.tag} saiu`);
 
   const canal = member.guild.channels.cache.get(exitChannelId);
-  if (!canal) return console.log('❌ Canal de saída não encontrado');
+  if (!canal) return;
 
   const gif = gifsSaida[Math.floor(Math.random() * gifsSaida.length)];
 
@@ -155,7 +166,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 // ================= ONLINE =================
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`🤖 ${client.user.tag} está online!`);
 });
 
