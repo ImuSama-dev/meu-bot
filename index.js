@@ -1256,7 +1256,7 @@ if (field === 'ticketCategoryId') {
 
 await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [field]: value } });
 return interaction.reply({ content: `Configurado: ${field} = <#${value}>.`, ephemeral: true });
-
+}
       if (sub === 'cargo') {
         const field = interaction.options.getString('tipo');
         const role = interaction.options.getRole('cargo');
