@@ -19,6 +19,13 @@ const mongoose = require('mongoose');
 const admin = require('firebase-admin');
 const serviceAccount = require('./firebase-service-account.json');
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const firestore = admin.firestore();
+
+
 // ================= ENV =================
 const token = process.env.TOKEN;
 const mongoUrl = process.env.MONGO_URL;
@@ -37,10 +44,6 @@ const DEFAULT_CONFIG = {
   logChannelId: process.env.LOG_CHANNEL_ID || '1500255471410479154',
   rulesChannelId: process.env.RULES_CHANNEL_ID || '1361360073774989604',
   rulesEmoji: process.env.RULES_EMOJI || '✅',
-  howItWorksChannelId: process.env.HOW_IT_WORKS_CHANNEL_ID || '1500264326802702557',
-  rankChannelId: process.env.RANK_CHANNEL_ID || '1500264994774847659',
-  topChannelId: process.env.TOP_CHANNEL_ID || '1500264908674171010',
-  xpChatChannelId: process.env.XP_CHAT_CHANNEL_ID || '1500265059715256320',
   visitorRoleId: process.env.VISITOR_ROLE_ID || '1500224581145858090',
   memberRoleId: process.env.MEMBER_ROLE_ID || '1334697264668741662',
   staffRoleId: process.env.STAFF_ROLE_ID || null,
@@ -50,28 +53,8 @@ const DEFAULT_CONFIG = {
     10: process.env.LEVEL_ROLE_10 || '1500290952018001981',
     20: process.env.LEVEL_ROLE_20 || '1500291699518341330'
   },
-  xpBlockedChannels: [],
-  automod: {
-    enabled: true,
-    capsMinLength: 10,
-    maxLength: 400,
-    spamLimit: 6,
-    spamWindowMs: 5000,
-    timeoutMs: 5 * 60 * 1000
-  },
-  antiRaid: {
-    enabled: true,
-    joinLimit: 6,
-    windowMs: 30000,
-    minAccountAgeDays: 3,
-    quarantineRoleId: process.env.QUARANTINE_ROLE_ID || '1500224581145858090'
-  },
-  economy: {
-    dailyAmount: 150,
-    messageMin: 1,
-    messageMax: 5
-  },
-  updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
+
+    updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
 siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/index.html',
   xpBlockedChannels: [],
   automod: {
@@ -97,21 +80,21 @@ siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/inde
 };
 
 // ================= MONGODB =================
-mongoose.connect(mongoUrl)
-  .then(() => console.log('MongoDB conectado'))
-  .catch(err => {
-    console.log('ERRO MONGO:', err);
+async function startBot() {
+  try {
+    await mongoose.connect(mongoUrl, {
+      serverSelectionTimeoutMS: 30000
+    });
+
+    console.log('MongoDB conectado');
+    await client.login(token);
+  } catch (err) {
+    console.log('ERRO AO INICIAR BOT:', err);
     process.exit(1);
-  });
+  }
+}
 
-// ================= FIREBASE =================
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
 
-const db = admin.firestore();
-
-// ================= SCHEMAS =================
 const guildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   welcomeChannelId: String,
@@ -119,16 +102,12 @@ const guildConfigSchema = new mongoose.Schema({
   logChannelId: String,
   rulesChannelId: String,
   rulesEmoji: String,
-  howItWorksChannelId: String,
-  rankChannelId: String,
-  topChannelId: String,
-  xpChatChannelId: String,
+  updatesChannelId: String,
+  siteUrl: String,
   visitorRoleId: String,
   memberRoleId: String,
   staffRoleId: String,
   ticketCategoryId: String,
-  updatesChannelId: String,
-  siteUrl: String,
   levelRoles: { type: Map, of: String, default: {} },
   xpBlockedChannels: { type: [String], default: [] },
   automod: {
@@ -187,21 +166,21 @@ const ticketSchema = new mongoose.Schema({
   transcript: String
 }, { timestamps: true });
 
-const announcementSchema = new mongoose.Schema({
-  guildId: { type: String, required: true },
-  chapterId: { type: String, required: true },
-  manhwaId: { type: String, required: true },
-  chapterNumber: String
-}, { timestamps: true });
-
-announcementSchema.index({ guildId: 1, chapterId: 1 }, { unique: true });
-
 const GuildConfig = mongoose.model('GuildConfig', guildConfigSchema);
 const XP = mongoose.model('XP', xpSchema);
 const Warning = mongoose.model('Warning', warningSchema);
 const Economy = mongoose.model('Economy', economySchema);
 const Ticket = mongoose.model('Ticket', ticketSchema);
+const announcementSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  type: { type: String, required: true },
+  itemId: { type: String, required: true }
+}, { timestamps: true });
+
+announcementSchema.index({ guildId: 1, type: 1, itemId: 1 }, { unique: true });
+
 const Announcement = mongoose.model('Announcement', announcementSchema);
+
 // ================= CLIENT =================
 const client = new Client({
   intents: [
@@ -265,6 +244,75 @@ async function ensureConfig(serverId) {
     economy: { ...DEFAULT_CONFIG.economy, ...(raw.economy || {}) }
   };
 }
+async function checkNewChapterUpdates(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.updatesChannelId) return;
+
+  const channel = guild.channels.cache.get(config.updatesChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const snapshot = await firestore
+    .collectionGroup('chapters')
+    .orderBy('updatedAt', 'desc')
+    .limit(1)
+    .get()
+    .catch(err => {
+      console.log('Erro ao buscar capitulos no Firebase:', err);
+      return null;
+    });
+
+  if (!snapshot || snapshot.empty) return;
+
+  const chapterDoc = snapshot.docs[0];
+  const chapter = chapterDoc.data();
+
+  const manhwaRef = chapterDoc.ref.parent.parent;
+  if (!manhwaRef) return;
+
+  const manhwaDoc = await manhwaRef.get();
+  if (!manhwaDoc.exists) return;
+
+  const manhwa = manhwaDoc.data();
+  const manhwaId = manhwaDoc.id;
+  const chapterId = chapterDoc.id;
+  const itemId = `${manhwaId}:${chapterId}`;
+
+  const alreadySent = await Announcement.findOne({
+    guildId: guild.id,
+    type: 'chapter',
+    itemId
+  });
+
+  if (alreadySent) return;
+
+  const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaId;
+  const capituloTitulo = chapter.titulo || chapter.title || `Capitulo ${chapterId}`;
+  const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
+  const chapterUrl = config.siteUrl;
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('☾ Novo capítulo disponível')
+    .setDescription(
+      `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
+      `✦ **Obra:** ${obraTitulo}\n` +
+      `✦ **Capítulo:** ${capituloTitulo}\n\n` +
+      `As páginas foram atualizadas. Continue a leitura e acompanhe essa história diretamente pelo site.\n\n` +
+      `[Ler agora](${chapterUrl})`
+    )
+    .setFooter({ text: 'Noctra Core • Atualização automática' })
+    .setTimestamp();
+
+  if (capaUrl) embed.setImage(capaUrl);
+
+  await channel.send({ embeds: [embed] });
+
+  await Announcement.create({
+    guildId: guild.id,
+    type: 'chapter',
+    itemId
+  }).catch(() => {});
+}
 
 async function sendLog(guild, title, description, color = '#2b2d31') {
   const config = await ensureConfig(guild.id);
@@ -282,81 +330,13 @@ async function sendLog(guild, title, description, color = '#2b2d31') {
   channel.send({ embeds: [embed] }).catch(() => {});
 }
 
-const RULES_MESSAGE_TITLE = '☾ Regras da Noctra';
-
-function buildRulesEmbed(config) {
-  return new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle(RULES_MESSAGE_TITLE)
-    .setDescription(
-      `Bem-vindo(a) à **Noctra**.\n\n` +
-      `A Noctra é uma comunidade ligada ao nosso site de manhwa, criada para reunir leitores, acompanhar novidades, conversar sobre obras, receber avisos importantes e manter um espaço organizado para todos.\n\n` +
-      `Antes de acessar o servidor completo, leia as regras abaixo com atenção. Ao reagir com ${config.rulesEmoji}, você confirma que entendeu e aceita seguir as diretrizes da comunidade.\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `**1. Respeito em primeiro lugar**\n` +
-      `Trate todos os membros com educação. Ofensas, ataques pessoais, perseguição, preconceito, ameaças, assédio ou qualquer comportamento feito para constranger outra pessoa não serão tolerados.\n\n` +
-      `**2. Use os canais corretamente**\n` +
-      `Cada canal tem uma função. Conversas gerais, dúvidas, sugestões, avisos, suporte e conteúdos sobre manhwa devem ser enviados nos lugares adequados para manter o servidor limpo e fácil de navegar.\n\n` +
-      `**3. Nada de spam, flood ou divulgação indevida**\n` +
-      `Evite mensagens repetidas, excesso de emojis, menções desnecessárias, correntes, links suspeitos ou qualquer tipo de divulgação sem autorização da staff.\n\n` +
-      `**4. Proibido conteúdo impróprio ou ilegal**\n` +
-      `Não envie conteúdo NSFW, gore, links maliciosos, golpes, doxxing, ameaças, discurso de ódio ou qualquer material que viole as diretrizes do Discord.\n\n` +
-      `**5. Spoilers devem ser sinalizados**\n` +
-      `Ao comentar capítulos, finais, reviravoltas ou acontecimentos importantes de uma obra, use marcação de spoiler e avise de qual obra/capítulo está falando. Nem todos leem no mesmo ritmo.\n\n` +
-      `**6. Sobre o site da Noctra**\n` +
-      `Dúvidas, problemas de leitura, erros em capítulos, bugs no site ou sugestões devem ser enviados nos canais corretos ou em ticket. Descreva o problema com clareza para que a equipe consiga analisar melhor.\n\n` +
-      `**7. Respeite a staff**\n` +
-      `A equipe existe para organizar o servidor, ajudar membros e manter o ambiente seguro. Caso discorde de uma decisão, fale com calma pelo canal adequado ou abra um ticket.\n\n` +
-      `**8. Proteja sua conta e sua privacidade**\n` +
-      `Não compartilhe dados pessoais seus ou de outras pessoas. A staff nunca vai pedir senha, token, código de autenticação ou informações sensíveis.\n\n` +
-      `**9. Siga os Termos do Discord**\n` +
-      `Além das regras da Noctra, todos devem seguir os Termos de Serviço e as Diretrizes da Comunidade do Discord.\n\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `**Acesso ao servidor**\n\n` +
-      `Para liberar seu acesso completo, reaja abaixo com:\n\n` +
-      `${config.rulesEmoji}\n\n` +
-      `Após reagir, você receberá acesso aos canais da Noctra.\n\n` +
-      `O descumprimento das regras pode resultar em aviso, mute, remoção de mensagens, expulsão ou banimento, dependendo da gravidade.`
-    )
-    .setFooter({ text: 'Noctra Core • Comunidade oficial de leitores' });
-}
-
-async function ensureRulesMessage(guild) {
-  const config = await ensureConfig(guild.id);
-  if (!config.rulesChannelId) return;
-
-  const channel = guild.channels.cache.get(config.rulesChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = buildRulesEmbed(config);
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-
-  const existingMessage = messages?.find(message =>
-    message.author.id === client.user.id &&
-    message.embeds?.[0]?.title === RULES_MESSAGE_TITLE
-  );
-
-  if (existingMessage) {
-    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
-    if (!existingMessage.reactions.cache.has(config.rulesEmoji)) {
-      await existingMessage.react(config.rulesEmoji).catch(() => {});
-    }
-    await existingMessage.pin().catch(() => {});
-    return;
-  }
-
-  const sentMessage = await channel.send({ embeds: [embed] });
-  await sentMessage.react(config.rulesEmoji).catch(() => {});
-  await sentMessage.pin().catch(() => {});
-}
-
 function canModerate(interaction, targetMember, permission) {
   const moderator = interaction.member;
   const botMember = interaction.guild.members.me;
 
-  if (!targetMember) return 'Usuário não encontrado no servidor.';
+  if (!targetMember) return 'Usuario nao encontrado no servidor.';
   if (targetMember.id === interaction.guild.ownerId) return 'Não posso punir o dono do servidor.';
-  if (targetMember.id === interaction.user.id) return 'Você não pode punir a sí mesmo.';
+  if (targetMember.id === interaction.user.id) return 'Você nao pode punir a si mesmo.';
   if (targetMember.id === client.user.id) return 'Eu não posso punir a mim mesmo.';
   if (!moderator.permissions.has(permission)) return 'Você não tem permissão para isso.';
   if (!botMember.permissions.has(permission)) return 'Eu não tenho permissão suficiente para isso.';
@@ -437,182 +417,6 @@ async function buildTranscript(channel) {
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
     .map(msg => `[${msg.createdAt.toISOString()}] ${msg.author.tag}: ${msg.content || '[sem texto]'}`)
     .join('\n');
-}
-
-const HOW_IT_WORKS_MESSAGE_TITLE = '☾ Como funciona';
-
-function buildHowItWorksEmbed() {
-  return new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle(HOW_IT_WORKS_MESSAGE_TITLE)
-    .setDescription(
-      `Na **Noctra**, sua participação também faz parte da experiência.\n\n` +
-      `Ao conversar nos canais liberados, você recebe XP automaticamente, sobe de nível e pode desbloquear cargos especiais dentro da comunidade.\n\n` +
-      `**Sistema de nível:**\n` +
-      `✦ Participe das conversas de forma natural.\n` +
-      `✦ Mensagens podem conceder experiência com intervalo de tempo.\n` +
-      `✦ Cargos exclusivos podem ser liberados em níveis específicos.\n` +
-      `✦ Spam, flood ou mensagens repetidas não aceleram sua evolução.\n\n` +
-      `Acompanhe seu progresso com **/rank** e veja os membros mais ativos com **/top**.`
-    )
-    .setFooter({ text: 'Noctra Core • Comunidade de leitores' });
-}
-
-async function ensureHowItWorksMessage(guild) {
-  const config = await ensureConfig(guild.id);
-  if (!config.howItWorksChannelId) return;
-
-  const channel = guild.channels.cache.get(config.howItWorksChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = buildHowItWorksEmbed();
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-
-  const existingMessage = messages?.find(message =>
-    message.author.id === client.user.id &&
-    message.embeds?.[0]?.title === HOW_IT_WORKS_MESSAGE_TITLE
-  );
-
-  if (existingMessage) {
-    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
-    await existingMessage.pin().catch(() => {});
-    return;
-  }
-
-  const sentMessage = await channel.send({ embeds: [embed] });
-  await sentMessage.pin().catch(() => {});
-}
-const RANK_MESSAGE_TITLE = '☾ Seu progresso na Noctra';
-
-function buildRankEmbed() {
-  return new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle(RANK_MESSAGE_TITLE)
-    .setDescription(
-      `Cada leitor deixa uma marca dentro da **Noctra**.\n\n` +
-      `O comando **/rank** mostra seu nível atual, sua experiência acumulada e o quanto falta para a próxima evolução.\n\n` +
-      `**Como crescer no rank:**\n` +
-      `✦ Participe das conversas da comunidade.\n` +
-      `✦ Comente suas obras favoritas e interaja com outros leitores.\n` +
-      `✦ Seja presente nos canais liberados.\n` +
-      `✦ Evolua com constância, sem spam ou flood.\n\n` +
-      `Seu nível representa sua presença na Noctra. Quanto mais você participa, mais sua jornada aparece para todos.\n\n` +
-      `Use **/rank** para acompanhar seu avanço.`
-    )
-    .setFooter({ text: 'Noctra Core • Sua presença também conta' });
-}
-
-async function ensureRankMessage(guild) {
-  const config = await ensureConfig(guild.id);
-  if (!config.rankChannelId) return;
-
-  const channel = guild.channels.cache.get(config.rankChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = buildRankEmbed();
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-
-  const existingMessage = messages?.find(message =>
-    message.author.id === client.user.id &&
-    message.embeds?.[0]?.title === RANK_MESSAGE_TITLE
-  );
-
-  if (existingMessage) {
-    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
-    await existingMessage.pin().catch(() => {});
-    return;
-  }
-
-  const sentMessage = await channel.send({ embeds: [embed] });
-  await sentMessage.pin().catch(() => {});
-}
-const TOP_MESSAGE_TITLE = '☾ Top da Noctra';
-
-function buildTopEmbed() {
-  return new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle(TOP_MESSAGE_TITLE)
-    .setDescription(
-      `O **Top da Noctra** destaca os leitores mais presentes da comunidade.\n\n` +
-      `Aqui aparecem aqueles que participam, conversam, movimentam os canais e ajudam a manter a Noctra viva todos os dias.\n\n` +
-      `**Como aparecer no top:**\n` +
-      `✦ Seja ativo nas conversas.\n` +
-      `✦ Comente capítulos, obras e novidades.\n` +
-      `✦ Interaja com outros leitores de forma natural.\n` +
-      `✦ Mantenha constância sem spam ou flood.\n\n` +
-      `A presença de cada leitor constrói a Noctra. Continue participando e seu nome pode aparecer entre os destaques.\n\n` +
-      `Use **/top** para ver o ranking da comunidade.`
-    )
-    .setFooter({ text: 'Noctra Core • Os leitores mais presentes deixam história' });
-}
-
-async function ensureTopMessage(guild) {
-  const config = await ensureConfig(guild.id);
-  if (!config.topChannelId) return;
-
-  const channel = guild.channels.cache.get(config.topChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = buildTopEmbed();
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-
-  const existingMessage = messages?.find(message =>
-    message.author.id === client.user.id &&
-    message.embeds?.[0]?.title === TOP_MESSAGE_TITLE
-  );
-
-  if (existingMessage) {
-    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
-    await existingMessage.pin().catch(() => {});
-    return;
-  }
-
-  const sentMessage = await channel.send({ embeds: [embed] });
-  await sentMessage.pin().catch(() => {});
-}
-const XP_CHAT_MESSAGE_TITLE = '☾ Chat de XP';
-
-function buildXpChatEmbed() {
-  return new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle(XP_CHAT_MESSAGE_TITLE)
-    .setDescription(
-      `Este é o chat principal para conversar, interagir e evoluir dentro da **Noctra** xp.\n\n` +
-      `Ao participar deste canal, você pode receber XP automaticamente, subir de nível e desbloquear cargos conforme avança na comunidade.\n\n` +
-      `**Como ganhar XP:**\n` +
-      `✦ Converse com outros leitores.\n` +
-      `✦ Comente sobre manhwas, capítulos e novidades.\n` +
-      `✦ Participe de forma natural e constante.\n` +
-      `✦ Quanto mais presente você for, mais perto fica dos cargos especiais.\n\n` +
-      `Spam, flood ou mensagens repetidas não aceleram o progresso e podem gerar punição.\n\n` +
-      `Use este espaço para aparecer, trocar ideias e construir sua presença na Noctra.`
-    )
-    .setFooter({ text: 'Noctra Core • Converse, evolua e desbloqueie cargos' });
-}
-
-async function ensureXpChatMessage(guild) {
-  const config = await ensureConfig(guild.id);
-  if (!config.xpChatChannelId) return;
-
-  const channel = guild.channels.cache.get(config.xpChatChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = buildXpChatEmbed();
-  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
-
-  const existingMessage = messages?.find(message =>
-    message.author.id === client.user.id &&
-    message.embeds?.[0]?.title === XP_CHAT_MESSAGE_TITLE
-  );
-
-  if (existingMessage) {
-    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
-    await existingMessage.pin().catch(() => {});
-    return;
-  }
-
-  const sentMessage = await channel.send({ embeds: [embed] });
-  await sentMessage.pin().catch(() => {});
 }
 
 // ================= COMANDOS =================
@@ -757,10 +561,6 @@ const commands = [
         { name: 'saida', value: 'exitChannelId' },
         { name: 'logs', value: 'logChannelId' },
         { name: 'regras', value: 'rulesChannelId' },
-        { name: 'como-funciona', value: 'howItWorksChannelId' },
-        { name: 'rank', value: 'rankChannelId' },
-        { name: 'top', value: 'topChannelId' },
-        { name: 'chat-xp', value: 'xpChatChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
       .addChannelOption(o => o.setName('canal').setDescription('Canal ou categoria.').setRequired(true)))
@@ -784,121 +584,19 @@ const commands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 ].map(command => command.toJSON());
 
-// ================= ANUNCIOS DE CAPITULOS =================
-async function checkNewChapterUpdates(guild) {
-  const config = await ensureConfig(guild.id);
-
-  if (!config.updatesChannelId) return;
-
-  const channel = guild.channels.cache.get(config.updatesChannelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const manhwasSnapshot = await db.collection('manhwas').get();
-
-  for (const manhwaDoc of manhwasSnapshot.docs) {
-    const manhwa = manhwaDoc.data();
-    const manhwaId = manhwaDoc.id;
-
-    const chaptersSnapshot = await db
-      .collection('manhwas')
-      .doc(manhwaId)
-      .collection('chapters')
-      .orderBy('updatedAt', 'desc')
-      .limit(5)
-      .get()
-      .catch(() => null);
-
-    if (!chaptersSnapshot || chaptersSnapshot.empty) continue;
-
-    for (const chapterDoc of chaptersSnapshot.docs) {
-      const chapter = chapterDoc.data();
-      const chapterId = chapterDoc.id;
-
-      const alreadySent = await Announcement.findOne({
-        guildId: guild.id,
-        chapterId
-      });
-
-      if (alreadySent) continue;
-
-      const chapterNumber =
-        chapter.number ||
-        chapter.capitulo ||
-        chapter.chapter ||
-        chapter.titulo ||
-        chapter.title ||
-        chapterId;
-
-      const workTitle =
-        manhwa.title ||
-        manhwa.nome ||
-        manhwa.name ||
-        'Nova obra';
-
-      const cover =
-        manhwa.cover ||
-        manhwa.capa ||
-        manhwa.image ||
-        manhwa.imagem ||
-        null;
-
-      const readUrl = `${config.siteUrl.replace('/index.html', '')}/reader.html?id=${encodeURIComponent(manhwaId)}&cap=${encodeURIComponent(chapterId)}`;
-
-      const embed = new EmbedBuilder()
-        .setColor('#a855f7')
-        .setTitle('☾ Novo capítulo disponível')
-        .setDescription(
-          `✦ **${workTitle}** recebeu uma nova atualização.\n\n` +
-          `📖 **Capítulo:** ${chapterNumber}\n\n` +
-          `Clique no botão abaixo para ler no site da **Noctra Core**.`
-        )
-        .setTimestamp()
-        .setFooter({ text: 'Noctra Core • Atualizações de manhwa' });
-
-      if (cover) embed.setThumbnail(cover);
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setLabel('Ler capítulo')
-          .setStyle(ButtonStyle.Link)
-          .setURL(readUrl)
-      );
-
-      await channel.send({ embeds: [embed], components: [row] });
-
-      await Announcement.create({
-        guildId: guild.id,
-        chapterId,
-        manhwaId,
-        chapterNumber: String(chapterNumber)
-      }).catch(() => {});
-    }
-  }
-}
 // ================= READY =================
 client.once('ready', async () => {
   console.log(`${client.user.tag} online!`);
 
-  for (const guild of client.guilds.cache.values()) {
-    await ensureConfig(guild.id);
-    await ensureRulesMessage(guild);
-    await ensureHowItWorksMessage(guild);
-    await ensureRankMessage(guild);
-    await ensureTopMessage(guild);
-    await ensureXpChatMessage(guild);
-    
-    await checkNewChapterUpdates(guild).catch(err => {
-    console.log('Erro ao checar capítulos:', err);
-  });
+for (const guild of client.guilds.cache.values()) {
+  await ensureConfig(guild.id);
 }
 
-setInterval(async () => {
+setInterval(() => {
   for (const guild of client.guilds.cache.values()) {
-    await checkNewChapterUpdates(guild).catch(err => {
-      console.log('Erro ao checar capítulos:', err);
-    });
+    checkNewChapterUpdates(guild).catch(err => console.log('Erro nas atualizacoes do site:', err));
   }
-}, 60 * 1000);
+}, 2 * 60 * 1000);
 
   const rest = new REST({ version: '10' }).setToken(token);
 
@@ -941,19 +639,9 @@ client.on('guildMemberAdd', async (member) => {
   const channel = member.guild.channels.cache.get(config.welcomeChannelId);
   if (channel) {
     const mensagens = [
-      `✦ ${member}, foi marcado(a) pela escuridão da **Noctra Core**.\n☾ Não há luz.\n❖ Não há saída.`,
+      `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
       `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
-      `❖ ${member}, entrou na **Noctra Core**.\n☾ Tem certeza disso...?\n❖ Não há saída.`,
-      `✦ ${member}, atravessou os portões da **Noctra Core**.\n☾ O vazio agora conhece seu nome.`,
-      `☾ ${member}, foi consumido pela névoa da **Noctra Core**.\n❖ Não existe retorno para quem entra aqui.`,
-      `✦ ${member}, despertou no coração da escuridão.\n☾ O silêncio daqui nunca dorme.`,
-      `❖ ${member}, caiu nas profundezas da **Noctra Core**.\n☾ Agora você pertence ao desconhecido.`,
-      `✦ ${member}, entrou na **Noctra Core**.\n☾ A escuridão observa cada passo seu.`,
-      `☾ ${member}, foi marcado pelas sombras.\n❖ Não há luz no fim deste caminho.`,
-      `✦ ${member}, abriu as portas do vazio.\n☾ A Noctra jamais esquece seus visitantes.`,
-      `❖ ${member}, chegou à **Noctra Core**.\n☾ Onde almas curiosas desaparecem lentamente.`,
-      `✦ ${member}, atravessou o limite entre realidade e caos.\n☾ Agora não existe mais volta.`,
-       `☾ ${member}, entrou na **Noctra Core**.\n❖ O eco das sombras agora o acompanha.`
+      `❖ ${member} entrou na **Noctra Core**.`
     ];
 
     const embed = new EmbedBuilder()
@@ -1134,113 +822,47 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isButton()) {
- if (interaction.customId === 'ticket_open') {
-  await interaction.deferReply({ ephemeral: true });
+      if (interaction.customId === 'ticket_open') {
+        const config = await ensureConfig(interaction.guild.id);
+        const existing = await Ticket.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, status: 'open' });
 
-  const config = await ensureConfig(interaction.guild.id);
+        if (existing) {
+          return interaction.reply({ content: `Voce ja tem um ticket aberto: <#${existing.channelId}>`, ephemeral: true });
+        }
 
-  if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageChannels)) {
-    return interaction.editReply('Eu preciso da permissão **Gerenciar canais** para abrir tickets.');
-  }
+        const overwrites = [
+          { id: interaction.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+          { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
+          { id: interaction.guild.members.me.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
+        ];
 
-  const existing = await Ticket.findOne({
-    guildId: interaction.guild.id,
-    userId: interaction.user.id,
-    status: 'open'
-  });
+        if (config.staffRoleId) {
+          overwrites.push({ id: config.staffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
+        }
 
-  if (existing) {
-    return interaction.editReply(`Você já tem um ticket aberto: <#${existing.channelId}>`);
-  }
+        const channel = await interaction.guild.channels.create({
+          name: `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+          type: ChannelType.GuildText,
+          parent: config.ticketCategoryId || undefined,
+          permissionOverwrites: overwrites
+        });
 
-const configuredTicketChannel = config.ticketCategoryId
-  ? interaction.guild.channels.cache.get(config.ticketCategoryId)
-  : null;
+        await Ticket.create({ guildId: interaction.guild.id, channelId: channel.id, userId: interaction.user.id });
 
-const category = configuredTicketChannel?.type === ChannelType.GuildCategory
-  ? configuredTicketChannel
-  : configuredTicketChannel?.parent || null;
+        const closeRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('ticket_close').setLabel('Fechar ticket').setStyle(ButtonStyle.Danger)
+        );
 
-if (config.ticketCategoryId && !category) {
-  return interaction.editReply(
-    'Não encontrei uma categoria para criar tickets. Configure uma categoria ou um canal que esteja dentro de uma categoria.'
-  );
-}
+        const embed = new EmbedBuilder()
+          .setColor('#2b2d31')
+          .setTitle('Ticket aberto')
+          .setDescription(`${interaction.user}, descreva o que voce precisa. A staff vai te responder aqui.`);
 
-  const overwrites = [
-    {
-      id: interaction.guild.roles.everyone.id,
-      deny: [PermissionFlagsBits.ViewChannel]
-    },
-    {
-      id: interaction.user.id,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ReadMessageHistory
-      ]
-    },
-    {
-      id: interaction.guild.members.me.id,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ReadMessageHistory,
-        PermissionFlagsBits.ManageChannels
-      ]
-    }
-  ];
-
-  if (config.staffRoleId) {
-    overwrites.push({
-      id: config.staffRoleId,
-      allow: [
-        PermissionFlagsBits.ViewChannel,
-        PermissionFlagsBits.SendMessages,
-        PermissionFlagsBits.ReadMessageHistory
-      ]
-    });
-  }
-
-  const safeName = interaction.user.username
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '')
-    .slice(0, 20) || interaction.user.id;
-
-  const channel = await interaction.guild.channels.create({
-    name: `ticket-${safeName}`,
-    type: ChannelType.GuildText,
-    parent: category ? category.id : undefined,
-    permissionOverwrites: overwrites,
-    reason: `Ticket aberto por ${interaction.user.tag}`
-  });
-
-  await Ticket.create({
-    guildId: interaction.guild.id,
-    channelId: channel.id,
-    userId: interaction.user.id
-  });
-
-  const closeRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('ticket_close')
-      .setLabel('Fechar ticket')
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  const embed = new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle('☾ Ticket aberto')
-    .setDescription(
-      `${interaction.user}, descreva com calma o que você precisa.\n\n` +
-      `A staff da Noctra vai responder assim que possível.`
-    );
-
-  await channel.send({ embeds: [embed], components: [closeRow] });
-  await interaction.editReply(`Ticket criado: ${channel}`);
-  await sendLog(interaction.guild, 'Ticket aberto', `${interaction.user} abriu ${channel}.`, '#5865f2');
-  return;
-}
+        await channel.send({ embeds: [embed], components: [closeRow] });
+        await interaction.reply({ content: `Ticket criado: ${channel}`, ephemeral: true });
+        await sendLog(interaction.guild, 'Ticket aberto', `${interaction.user} abriu ${channel}.`, '#5865f2');
+        return;
+      }
 
       if (interaction.customId === 'ticket_close') {
         const ticket = await Ticket.findOne({ guildId: interaction.guild.id, channelId: interaction.channel.id, status: 'open' });
@@ -1575,27 +1197,12 @@ if (config.ticketCategoryId && !category) {
       await ensureConfig(interaction.guild.id);
 
       if (sub === 'canal') {
-const field = interaction.options.getString('tipo');
-const channel = interaction.options.getChannel('canal');
+        const field = interaction.options.getString('tipo');
+        const channel = interaction.options.getChannel('canal');
+        await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [field]: channel.id } });
+        return interaction.reply({ content: `Configurado: ${field} = ${channel}.`, ephemeral: true });
+      }
 
-let value = channel.id;
-
-if (field === 'ticketCategoryId') {
-  if (channel.type === ChannelType.GuildCategory) {
-    value = channel.id;
-  } else if (channel.parentId) {
-    value = channel.parentId;
-  } else {
-    return interaction.reply({
-      content: 'Para categoria-ticket, escolha uma categoria ou um canal que esteja dentro de uma categoria.',
-      ephemeral: true
-    });
-  }
-}
-
-await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [field]: value } });
-return interaction.reply({ content: `Configurado: ${field} = <#${value}>.`, ephemeral: true });
-}
       if (sub === 'cargo') {
         const field = interaction.options.getString('tipo');
         const role = interaction.options.getRole('cargo');
@@ -1639,4 +1246,5 @@ return interaction.reply({ content: `Configurado: ${field} = <#${value}>.`, ephe
 });
 
 // ================= ONLINE =================
-client.login(token);
+startBot();
+
