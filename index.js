@@ -235,16 +235,16 @@ function canModerate(interaction, targetMember, permission) {
   const botMember = interaction.guild.members.me;
 
   if (!targetMember) return 'Usuario nao encontrado no servidor.';
-  if (targetMember.id === interaction.guild.ownerId) return 'Nao posso punir o dono do servidor.';
-  if (targetMember.id === interaction.user.id) return 'Voce nao pode punir a si mesmo.';
-  if (targetMember.id === client.user.id) return 'Eu nao posso punir a mim mesmo.';
-  if (!moderator.permissions.has(permission)) return 'Voce nao tem permissao para isso.';
-  if (!botMember.permissions.has(permission)) return 'Eu nao tenho permissao suficiente para isso.';
+  if (targetMember.id === interaction.guild.ownerId) return 'Não posso punir o dono do servidor.';
+  if (targetMember.id === interaction.user.id) return 'Você nao pode punir a si mesmo.';
+  if (targetMember.id === client.user.id) return 'Eu não posso punir a mim mesmo.';
+  if (!moderator.permissions.has(permission)) return 'Você não tem permissão para isso.';
+  if (!botMember.permissions.has(permission)) return 'Eu não tenho permissão suficiente para isso.';
   if (targetMember.roles.highest.position >= moderator.roles.highest.position && interaction.guild.ownerId !== interaction.user.id) {
-    return 'Esse usuario tem cargo igual ou acima do seu.';
+    return 'Esse usuário tem cargo igual ou acima do seu.';
   }
   if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
-    return 'Meu cargo precisa ficar acima do cargo desse usuario.';
+    return 'Meu cargo precisa ficar acima do cargo desse usuário.';
   }
 
   return null;
@@ -559,8 +559,9 @@ client.on('guildMemberRemove', async (member) => {
       .setColor('#111111')
       .setDescription(
         `☠ saiu da Noctra\n\n` +
-        `✦ ${member.user} desapareceu na escuridão...\n\n` +
-        `O vazio agora se torna mais pesado.`
+        `✦ ${member.user} desapareceu na escuridão...💔​\n\n` +
+        `O vazio agora se torna mais pesado.\n` +
+        `Espero que você se perca!​💢​​`
       )
       .setImage(pick(gifsSaida));
 
