@@ -69,6 +69,29 @@ const DEFAULT_CONFIG = {
     messageMin: 1,
     messageMax: 5
   }
+  updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
+siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/index.html',
+  xpBlockedChannels: [],
+  automod: {
+    enabled: true,
+    capsMinLength: 10,
+    maxLength: 400,
+    spamLimit: 6,
+    spamWindowMs: 5000,
+    timeoutMs: 5 * 60 * 1000
+  },
+  antiRaid: {
+    enabled: true,
+    joinLimit: 6,
+    windowMs: 30000,
+    minAccountAgeDays: 3,
+    quarantineRoleId: process.env.QUARANTINE_ROLE_ID || '1500224581145858090'
+  },
+  economy: {
+    dailyAmount: 150,
+    messageMin: 1,
+    messageMax: 5
+  }
 };
 
 // ================= MONGODB =================
