@@ -98,18 +98,21 @@ siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/inde
 
 // ================= MONGODB =================
 mongoose.connect(mongoUrl)
-  admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-const db = admin.firestore();
   .then(() => console.log('MongoDB conectado'))
   .catch(err => {
     console.log('ERRO MONGO:', err);
     process.exit(1);
   });
+
+// ================= FIREBASE =================
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
+
+const db = admin.firestore();
+
+// ================= SCHEMAS =================
+const guildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
   welcomeChannelId: String,
   exitChannelId: String,
@@ -124,6 +127,8 @@ admin.initializeApp({
   memberRoleId: String,
   staffRoleId: String,
   ticketCategoryId: String,
+  updatesChannelId: String,
+  siteUrl: String,
   levelRoles: { type: Map, of: String, default: {} },
   xpBlockedChannels: { type: [String], default: [] },
   automod: {
@@ -181,20 +186,22 @@ const ticketSchema = new mongoose.Schema({
   closedAt: Date,
   transcript: String
 }, { timestamps: true });
+
 const announcementSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   chapterId: { type: String, required: true },
   manhwaId: { type: String, required: true },
   chapterNumber: String
 }, { timestamps: true });
+
 announcementSchema.index({ guildId: 1, chapterId: 1 }, { unique: true });
+
 const GuildConfig = mongoose.model('GuildConfig', guildConfigSchema);
 const XP = mongoose.model('XP', xpSchema);
 const Warning = mongoose.model('Warning', warningSchema);
 const Economy = mongoose.model('Economy', economySchema);
 const Ticket = mongoose.model('Ticket', ticketSchema);
 const Announcement = mongoose.model('Announcement', announcementSchema);
-
 // ================= CLIENT =================
 const client = new Client({
   intents: [
@@ -892,7 +899,6 @@ setInterval(async () => {
     });
   }
 }, 60 * 1000);
-  }
 
   const rest = new REST({ version: '10' }).setToken(token);
 
