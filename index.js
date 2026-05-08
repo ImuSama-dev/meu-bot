@@ -16,6 +16,8 @@ const {
 } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
+const admin = require('firebase-admin');
+const serviceAccount = require('./firebase-service-account.json');
 
 // ================= ENV =================
 const token = process.env.TOKEN;
@@ -96,13 +98,18 @@ siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/inde
 
 // ================= MONGODB =================
 mongoose.connect(mongoUrl)
+  admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+const db = admin.firestore();
   .then(() => console.log('MongoDB conectado'))
   .catch(err => {
     console.log('ERRO MONGO:', err);
     process.exit(1);
   });
-
-const guildConfigSchema = new mongoose.Schema({
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
   guildId: { type: String, required: true, unique: true },
   welcomeChannelId: String,
   exitChannelId: String,
@@ -174,12 +181,19 @@ const ticketSchema = new mongoose.Schema({
   closedAt: Date,
   transcript: String
 }, { timestamps: true });
-
+const announcementSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  chapterId: { type: String, required: true },
+  manhwaId: { type: String, required: true },
+  chapterNumber: String
+}, { timestamps: true });
+announcementSchema.index({ guildId: 1, chapterId: 1 }, { unique: true });
 const GuildConfig = mongoose.model('GuildConfig', guildConfigSchema);
 const XP = mongoose.model('XP', xpSchema);
 const Warning = mongoose.model('Warning', warningSchema);
 const Economy = mongoose.model('Economy', economySchema);
 const Ticket = mongoose.model('Ticket', ticketSchema);
+const Announcement = mongoose.model('Announcement', announcementSchema);
 
 // ================= CLIENT =================
 const client = new Client({
@@ -763,6 +777,97 @@ const commands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 ].map(command => command.toJSON());
 
+// ================= ANUNCIOS DE CAPITULOS =================
+async function checkNewChapterUpdates(guild) {
+  const config = await ensureConfig(guild.id);
+
+  if (!config.updatesChannelId) return;
+
+  const channel = guild.channels.cache.get(config.updatesChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const manhwasSnapshot = await db.collection('manhwas').get();
+
+  for (const manhwaDoc of manhwasSnapshot.docs) {
+    const manhwa = manhwaDoc.data();
+    const manhwaId = manhwaDoc.id;
+
+    const chaptersSnapshot = await db
+      .collection('manhwas')
+      .doc(manhwaId)
+      .collection('chapters')
+      .orderBy('updatedAt', 'desc')
+      .limit(5)
+      .get()
+      .catch(() => null);
+
+    if (!chaptersSnapshot || chaptersSnapshot.empty) continue;
+
+    for (const chapterDoc of chaptersSnapshot.docs) {
+      const chapter = chapterDoc.data();
+      const chapterId = chapterDoc.id;
+
+      const alreadySent = await Announcement.findOne({
+        guildId: guild.id,
+        chapterId
+      });
+
+      if (alreadySent) continue;
+
+      const chapterNumber =
+        chapter.number ||
+        chapter.capitulo ||
+        chapter.chapter ||
+        chapter.titulo ||
+        chapter.title ||
+        chapterId;
+
+      const workTitle =
+        manhwa.title ||
+        manhwa.nome ||
+        manhwa.name ||
+        'Nova obra';
+
+      const cover =
+        manhwa.cover ||
+        manhwa.capa ||
+        manhwa.image ||
+        manhwa.imagem ||
+        null;
+
+      const readUrl = `${config.siteUrl.replace('/index.html', '')}/reader.html?id=${encodeURIComponent(manhwaId)}&cap=${encodeURIComponent(chapterId)}`;
+
+      const embed = new EmbedBuilder()
+        .setColor('#a855f7')
+        .setTitle('☾ Novo capítulo disponível')
+        .setDescription(
+          `✦ **${workTitle}** recebeu uma nova atualização.\n\n` +
+          `📖 **Capítulo:** ${chapterNumber}\n\n` +
+          `Clique no botão abaixo para ler no site da **Noctra Core**.`
+        )
+        .setTimestamp()
+        .setFooter({ text: 'Noctra Core • Atualizações de manhwa' });
+
+      if (cover) embed.setThumbnail(cover);
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('Ler capítulo')
+          .setStyle(ButtonStyle.Link)
+          .setURL(readUrl)
+      );
+
+      await channel.send({ embeds: [embed], components: [row] });
+
+      await Announcement.create({
+        guildId: guild.id,
+        chapterId,
+        manhwaId,
+        chapterNumber: String(chapterNumber)
+      }).catch(() => {});
+    }
+  }
+}
 // ================= READY =================
 client.once('ready', async () => {
   console.log(`${client.user.tag} online!`);
@@ -774,6 +879,19 @@ client.once('ready', async () => {
     await ensureRankMessage(guild);
     await ensureTopMessage(guild);
     await ensureXpChatMessage(guild);
+    
+    await checkNewChapterUpdates(guild).catch(err => {
+    console.log('Erro ao checar capítulos:', err);
+  });
+}
+
+setInterval(async () => {
+  for (const guild of client.guilds.cache.values()) {
+    await checkNewChapterUpdates(guild).catch(err => {
+      console.log('Erro ao checar capítulos:', err);
+    });
+  }
+}, 60 * 1000);
   }
 
   const rest = new REST({ version: '10' }).setToken(token);
