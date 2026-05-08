@@ -234,9 +234,9 @@ function canModerate(interaction, targetMember, permission) {
   const moderator = interaction.member;
   const botMember = interaction.guild.members.me;
 
-  if (!targetMember) return 'Usuario nao encontrado no servidor.';
+  if (!targetMember) return 'Usuário não encontrado no servidor.';
   if (targetMember.id === interaction.guild.ownerId) return 'Não posso punir o dono do servidor.';
-  if (targetMember.id === interaction.user.id) return 'Você nao pode punir a si mesmo.';
+  if (targetMember.id === interaction.user.id) return 'Você não pode punir a sí mesmo.';
   if (targetMember.id === client.user.id) return 'Eu não posso punir a mim mesmo.';
   if (!moderator.permissions.has(permission)) return 'Você não tem permissão para isso.';
   if (!botMember.permissions.has(permission)) return 'Eu não tenho permissão suficiente para isso.';
@@ -533,9 +533,19 @@ client.on('guildMemberAdd', async (member) => {
   const channel = member.guild.channels.cache.get(config.welcomeChannelId);
   if (channel) {
     const mensagens = [
-      `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
+      `✦ ${member}, foi marcado(a) pela escuridão da **Noctra Core**.\n☾ Não há luz.\n❖ Não há saída.`,
       `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
-      `❖ ${member} entrou na **Noctra Core**.`
+      `❖ ${member}, entrou na **Noctra Core**.\n☾ Tem certeza disso...?\n❖ Não há saída.`,
+      `✦ ${member}, atravessou os portões da **Noctra Core**.\n☾ O vazio agora conhece seu nome.`,
+      `☾ ${member}, foi consumido pela névoa da **Noctra Core**.\n❖ Não existe retorno para quem entra aqui.`,
+      `✦ ${member}, despertou no coração da escuridão.\n☾ O silêncio daqui nunca dorme.`,
+      `❖ ${member}, caiu nas profundezas da **Noctra Core**.\n☾ Agora você pertence ao desconhecido.`,
+      `✦ ${member}, entrou na **Noctra Core**.\n☾ A escuridão observa cada passo seu.`,
+      `☾ ${member}, foi marcado pelas sombras.\n❖ Não há luz no fim deste caminho.`,
+      `✦ ${member}, abriu as portas do vazio.\n☾ A Noctra jamais esquece seus visitantes.`,
+      `❖ ${member}, chegou à **Noctra Core**.\n☾ Onde almas curiosas desaparecem lentamente.`,
+      `✦ ${member}, atravessou o limite entre realidade e caos.\n☾ Agora não existe mais volta.`,
+       `☾ ${member}, entrou na **Noctra Core**.\n❖ O eco das sombras agora o acompanha.`
     ];
 
     const embed = new EmbedBuilder()
