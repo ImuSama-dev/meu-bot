@@ -68,7 +68,7 @@ const DEFAULT_CONFIG = {
     dailyAmount: 150,
     messageMin: 1,
     messageMax: 5
-  }
+  },
   updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
 siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/index.html',
   xpBlockedChannels: [],
