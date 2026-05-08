@@ -814,15 +814,19 @@ client.on('interactionCreate', async (interaction) => {
     return interaction.editReply(`Você já tem um ticket aberto: <#${existing.channelId}>`);
   }
 
-  const category = config.ticketCategoryId
-    ? interaction.guild.channels.cache.get(config.ticketCategoryId)
-    : null;
+const configuredTicketChannel = config.ticketCategoryId
+  ? interaction.guild.channels.cache.get(config.ticketCategoryId)
+  : null;
 
-  if (config.ticketCategoryId && (!category || category.type !== ChannelType.GuildCategory)) {
-    return interaction.editReply(
-      'A categoria de tickets configurada não foi encontrada ou não é uma categoria válida. Use `/config canal tipo:categoria-ticket` novamente.'
-    );
-  }
+const category = configuredTicketChannel?.type === ChannelType.GuildCategory
+  ? configuredTicketChannel
+  : configuredTicketChannel?.parent || null;
+
+if (config.ticketCategoryId && !category) {
+  return interaction.editReply(
+    'Não encontrei uma categoria para criar tickets. Configure uma categoria ou um canal que esteja dentro de uma categoria.'
+  );
+}
 
   const overwrites = [
     {
@@ -1232,11 +1236,26 @@ client.on('interactionCreate', async (interaction) => {
       await ensureConfig(interaction.guild.id);
 
       if (sub === 'canal') {
-        const field = interaction.options.getString('tipo');
-        const channel = interaction.options.getChannel('canal');
-        await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [field]: channel.id } });
-        return interaction.reply({ content: `Configurado: ${field} = ${channel}.`, ephemeral: true });
-      }
+const field = interaction.options.getString('tipo');
+const channel = interaction.options.getChannel('canal');
+
+let value = channel.id;
+
+if (field === 'ticketCategoryId') {
+  if (channel.type === ChannelType.GuildCategory) {
+    value = channel.id;
+  } else if (channel.parentId) {
+    value = channel.parentId;
+  } else {
+    return interaction.reply({
+      content: 'Para categoria-ticket, escolha uma categoria ou um canal que esteja dentro de uma categoria.',
+      ephemeral: true
+    });
+  }
+}
+
+await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [field]: value } });
+return interaction.reply({ content: `Configurado: ${field} = <#${value}>.`, ephemeral: true });
 
       if (sub === 'cargo') {
         const field = interaction.options.getString('tipo');
