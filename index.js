@@ -36,6 +36,8 @@ const DEFAULT_CONFIG = {
   rulesChannelId: process.env.RULES_CHANNEL_ID || '1361360073774989604',
   rulesEmoji: process.env.RULES_EMOJI || '✅',
   howItWorksChannelId: process.env.HOW_IT_WORKS_CHANNEL_ID || '1500264326802702557',
+  rankChannelId: process.env.RANK_CHANNEL_ID || '1500264994774847659',
+  topChannelId: process.env.TOP_CHANNEL_ID || '1500264908674171010',
   visitorRoleId: process.env.VISITOR_ROLE_ID || '1500224581145858090',
   memberRoleId: process.env.MEMBER_ROLE_ID || '1334697264668741662',
   staffRoleId: process.env.STAFF_ROLE_ID || null,
@@ -84,6 +86,8 @@ const guildConfigSchema = new mongoose.Schema({
   rulesChannelId: String,
   rulesEmoji: String,
   howItWorksChannelId: String,
+  rankChannelId: String,
+  topChannelId: String,
   visitorRoleId: String,
   memberRoleId: String,
   staffRoleId: String,
@@ -432,6 +436,94 @@ async function ensureHowItWorksMessage(guild) {
   const sentMessage = await channel.send({ embeds: [embed] });
   await sentMessage.pin().catch(() => {});
 }
+const RANK_MESSAGE_TITLE = '☾ Seu progresso na Noctra';
+
+function buildRankEmbed() {
+  return new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle(RANK_MESSAGE_TITLE)
+    .setDescription(
+      `Cada leitor deixa uma marca dentro da **Noctra**.\n\n` +
+      `O comando **/rank** mostra seu nível atual, sua experiência acumulada e o quanto falta para a próxima evolução.\n\n` +
+      `**Como crescer no rank:**\n` +
+      `✦ Participe das conversas da comunidade.\n` +
+      `✦ Comente suas obras favoritas e interaja com outros leitores.\n` +
+      `✦ Seja presente nos canais liberados.\n` +
+      `✦ Evolua com constância, sem spam ou flood.\n\n` +
+      `Seu nível representa sua presença na Noctra. Quanto mais você participa, mais sua jornada aparece para todos.\n\n` +
+      `Use **/rank** para acompanhar seu avanço.`
+    )
+    .setFooter({ text: 'Noctra Core • Sua presença também conta' });
+}
+
+async function ensureRankMessage(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.rankChannelId) return;
+
+  const channel = guild.channels.cache.get(config.rankChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const embed = buildRankEmbed();
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+
+  const existingMessage = messages?.find(message =>
+    message.author.id === client.user.id &&
+    message.embeds?.[0]?.title === RANK_MESSAGE_TITLE
+  );
+
+  if (existingMessage) {
+    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
+    await existingMessage.pin().catch(() => {});
+    return;
+  }
+
+  const sentMessage = await channel.send({ embeds: [embed] });
+  await sentMessage.pin().catch(() => {});
+}
+const TOP_MESSAGE_TITLE = '☾ Top da Noctra';
+
+function buildTopEmbed() {
+  return new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle(TOP_MESSAGE_TITLE)
+    .setDescription(
+      `O **Top da Noctra** destaca os leitores mais presentes da comunidade.\n\n` +
+      `Aqui aparecem aqueles que participam, conversam, movimentam os canais e ajudam a manter a Noctra viva todos os dias.\n\n` +
+      `**Como aparecer no top:**\n` +
+      `✦ Seja ativo nas conversas.\n` +
+      `✦ Comente capítulos, obras e novidades.\n` +
+      `✦ Interaja com outros leitores de forma natural.\n` +
+      `✦ Mantenha constância sem spam ou flood.\n\n` +
+      `A presença de cada leitor constrói a Noctra. Continue participando e seu nome pode aparecer entre os destaques.\n\n` +
+      `Use **/top** para ver o ranking da comunidade.`
+    )
+    .setFooter({ text: 'Noctra Core • Os leitores mais presentes deixam história' });
+}
+
+async function ensureTopMessage(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.topChannelId) return;
+
+  const channel = guild.channels.cache.get(config.topChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const embed = buildTopEmbed();
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+
+  const existingMessage = messages?.find(message =>
+    message.author.id === client.user.id &&
+    message.embeds?.[0]?.title === TOP_MESSAGE_TITLE
+  );
+
+  if (existingMessage) {
+    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
+    await existingMessage.pin().catch(() => {});
+    return;
+  }
+
+  const sentMessage = await channel.send({ embeds: [embed] });
+  await sentMessage.pin().catch(() => {});
+}
 
 // ================= COMANDOS =================
 const commands = [
@@ -576,6 +668,8 @@ const commands = [
         { name: 'logs', value: 'logChannelId' },
         { name: 'regras', value: 'rulesChannelId' },
         { name: 'como-funciona', value: 'howItWorksChannelId' },
+        { name: 'rank', value: 'rankChannelId' },
+        { name: 'top', value: 'topChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
       .addChannelOption(o => o.setName('canal').setDescription('Canal ou categoria.').setRequired(true)))
@@ -607,6 +701,8 @@ client.once('ready', async () => {
     await ensureConfig(guild.id);
     await ensureRulesMessage(guild);
     await ensureHowItWorksMessage(guild);
+    await ensureRankMessage(guild);
+    await ensureTopMessage(guild);
   }
 
   const rest = new REST({ version: '10' }).setToken(token);
