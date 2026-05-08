@@ -230,6 +230,74 @@ async function sendLog(guild, title, description, color = '#2b2d31') {
   channel.send({ embeds: [embed] }).catch(() => {});
 }
 
+const RULES_MESSAGE_TITLE = '☾ Regras da Noctra';
+
+function buildRulesEmbed(config) {
+  return new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle(RULES_MESSAGE_TITLE)
+    .setDescription(
+      `Bem-vindo(a) à **Noctra**.\n\n` +
+      `A Noctra é uma comunidade ligada ao nosso site de manhwa, criada para reunir leitores, acompanhar novidades, conversar sobre obras, receber avisos importantes e manter um espaço organizado para todos.\n\n` +
+      `Antes de acessar o servidor completo, leia as regras abaixo com atenção. Ao reagir com ${config.rulesEmoji}, você confirma que entendeu e aceita seguir as diretrizes da comunidade.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `**1. Respeito em primeiro lugar**\n` +
+      `Trate todos os membros com educação. Ofensas, ataques pessoais, perseguição, preconceito, ameaças, assédio ou qualquer comportamento feito para constranger outra pessoa não serão tolerados.\n\n` +
+      `**2. Use os canais corretamente**\n` +
+      `Cada canal tem uma função. Conversas gerais, dúvidas, sugestões, avisos, suporte e conteúdos sobre manhwa devem ser enviados nos lugares adequados para manter o servidor limpo e fácil de navegar.\n\n` +
+      `**3. Nada de spam, flood ou divulgação indevida**\n` +
+      `Evite mensagens repetidas, excesso de emojis, menções desnecessárias, correntes, links suspeitos ou qualquer tipo de divulgação sem autorização da staff.\n\n` +
+      `**4. Proibido conteúdo impróprio ou ilegal**\n` +
+      `Não envie conteúdo NSFW, gore, links maliciosos, golpes, doxxing, ameaças, discurso de ódio ou qualquer material que viole as diretrizes do Discord.\n\n` +
+      `**5. Spoilers devem ser sinalizados**\n` +
+      `Ao comentar capítulos, finais, reviravoltas ou acontecimentos importantes de uma obra, use marcação de spoiler e avise de qual obra/capítulo está falando. Nem todos leem no mesmo ritmo.\n\n` +
+      `**6. Sobre o site da Noctra**\n` +
+      `Dúvidas, problemas de leitura, erros em capítulos, bugs no site ou sugestões devem ser enviados nos canais corretos ou em ticket. Descreva o problema com clareza para que a equipe consiga analisar melhor.\n\n` +
+      `**7. Respeite a staff**\n` +
+      `A equipe existe para organizar o servidor, ajudar membros e manter o ambiente seguro. Caso discorde de uma decisão, fale com calma pelo canal adequado ou abra um ticket.\n\n` +
+      `**8. Proteja sua conta e sua privacidade**\n` +
+      `Não compartilhe dados pessoais seus ou de outras pessoas. A staff nunca vai pedir senha, token, código de autenticação ou informações sensíveis.\n\n` +
+      `**9. Siga os Termos do Discord**\n` +
+      `Além das regras da Noctra, todos devem seguir os Termos de Serviço e as Diretrizes da Comunidade do Discord.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `**Acesso ao servidor**\n\n` +
+      `Para liberar seu acesso completo, reaja abaixo com:\n\n` +
+      `${config.rulesEmoji}\n\n` +
+      `Após reagir, você receberá acesso aos canais da Noctra.\n\n` +
+      `O descumprimento das regras pode resultar em aviso, mute, remoção de mensagens, expulsão ou banimento, dependendo da gravidade.`
+    )
+    .setFooter({ text: 'Noctra Core • Comunidade oficial de leitores' });
+}
+
+async function ensureRulesMessage(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.rulesChannelId) return;
+
+  const channel = guild.channels.cache.get(config.rulesChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const embed = buildRulesEmbed(config);
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+
+  const existingMessage = messages?.find(message =>
+    message.author.id === client.user.id &&
+    message.embeds?.[0]?.title === RULES_MESSAGE_TITLE
+  );
+
+  if (existingMessage) {
+    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
+    if (!existingMessage.reactions.cache.has(config.rulesEmoji)) {
+      await existingMessage.react(config.rulesEmoji).catch(() => {});
+    }
+    await existingMessage.pin().catch(() => {});
+    return;
+  }
+
+  const sentMessage = await channel.send({ embeds: [embed] });
+  await sentMessage.react(config.rulesEmoji).catch(() => {});
+  await sentMessage.pin().catch(() => {});
+}
+
 function canModerate(interaction, targetMember, permission) {
   const moderator = interaction.member;
   const botMember = interaction.guild.members.me;
@@ -490,6 +558,7 @@ client.once('ready', async () => {
 
   for (const guild of client.guilds.cache.values()) {
     await ensureConfig(guild.id);
+    await ensureRulesMessage(guild);
   }
 
   const rest = new REST({ version: '10' }).setToken(token);
