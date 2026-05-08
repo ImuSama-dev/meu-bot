@@ -38,6 +38,7 @@ const DEFAULT_CONFIG = {
   howItWorksChannelId: process.env.HOW_IT_WORKS_CHANNEL_ID || '1500264326802702557',
   rankChannelId: process.env.RANK_CHANNEL_ID || '1500264994774847659',
   topChannelId: process.env.TOP_CHANNEL_ID || '1500264908674171010',
+  xpChatChannelId: process.env.XP_CHAT_CHANNEL_ID || '1500265059715256320',
   visitorRoleId: process.env.VISITOR_ROLE_ID || '1500224581145858090',
   memberRoleId: process.env.MEMBER_ROLE_ID || '1334697264668741662',
   staffRoleId: process.env.STAFF_ROLE_ID || null,
@@ -88,6 +89,7 @@ const guildConfigSchema = new mongoose.Schema({
   howItWorksChannelId: String,
   rankChannelId: String,
   topChannelId: String,
+  xpChatChannelId: String,
   visitorRoleId: String,
   memberRoleId: String,
   staffRoleId: String,
@@ -524,6 +526,50 @@ async function ensureTopMessage(guild) {
   const sentMessage = await channel.send({ embeds: [embed] });
   await sentMessage.pin().catch(() => {});
 }
+const XP_CHAT_MESSAGE_TITLE = '☾ Chat de XP';
+
+function buildXpChatEmbed() {
+  return new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle(XP_CHAT_MESSAGE_TITLE)
+    .setDescription(
+      `Este é o chat principal para conversar, interagir e evoluir dentro da **Noctra** xp.\n\n` +
+      `Ao participar deste canal, você pode receber XP automaticamente, subir de nível e desbloquear cargos conforme avança na comunidade.\n\n` +
+      `**Como ganhar XP:**\n` +
+      `✦ Converse com outros leitores.\n` +
+      `✦ Comente sobre manhwas, capítulos e novidades.\n` +
+      `✦ Participe de forma natural e constante.\n` +
+      `✦ Quanto mais presente você for, mais perto fica dos cargos especiais.\n\n` +
+      `Spam, flood ou mensagens repetidas não aceleram o progresso e podem gerar punição.\n\n` +
+      `Use este espaço para aparecer, trocar ideias e construir sua presença na Noctra.`
+    )
+    .setFooter({ text: 'Noctra Core • Converse, evolua e desbloqueie cargos' });
+}
+
+async function ensureXpChatMessage(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.xpChatChannelId) return;
+
+  const channel = guild.channels.cache.get(config.xpChatChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const embed = buildXpChatEmbed();
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+
+  const existingMessage = messages?.find(message =>
+    message.author.id === client.user.id &&
+    message.embeds?.[0]?.title === XP_CHAT_MESSAGE_TITLE
+  );
+
+  if (existingMessage) {
+    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
+    await existingMessage.pin().catch(() => {});
+    return;
+  }
+
+  const sentMessage = await channel.send({ embeds: [embed] });
+  await sentMessage.pin().catch(() => {});
+}
 
 // ================= COMANDOS =================
 const commands = [
@@ -670,6 +716,7 @@ const commands = [
         { name: 'como-funciona', value: 'howItWorksChannelId' },
         { name: 'rank', value: 'rankChannelId' },
         { name: 'top', value: 'topChannelId' },
+        { name: 'chat-xp', value: 'xpChatChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
       .addChannelOption(o => o.setName('canal').setDescription('Canal ou categoria.').setRequired(true)))
@@ -703,6 +750,7 @@ client.once('ready', async () => {
     await ensureHowItWorksMessage(guild);
     await ensureRankMessage(guild);
     await ensureTopMessage(guild);
+    await ensureXpChatMessage(guild);
   }
 
   const rest = new REST({ version: '10' }).setToken(token);
