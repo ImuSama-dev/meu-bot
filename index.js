@@ -35,6 +35,7 @@ const DEFAULT_CONFIG = {
   logChannelId: process.env.LOG_CHANNEL_ID || '1500255471410479154',
   rulesChannelId: process.env.RULES_CHANNEL_ID || '1361360073774989604',
   rulesEmoji: process.env.RULES_EMOJI || '✅',
+  howItWorksChannelId: process.env.HOW_IT_WORKS_CHANNEL_ID || '1500264326802702557',
   visitorRoleId: process.env.VISITOR_ROLE_ID || '1500224581145858090',
   memberRoleId: process.env.MEMBER_ROLE_ID || '1334697264668741662',
   staffRoleId: process.env.STAFF_ROLE_ID || null,
@@ -82,6 +83,51 @@ const guildConfigSchema = new mongoose.Schema({
   logChannelId: String,
   rulesChannelId: String,
   rulesEmoji: String,
+  howItWorksChannelId: String,
+  const HOW_IT_WORKS_MESSAGE_TITLE = '☾ Como funciona o sistema de nível';
+
+function buildHowItWorksEmbed() {
+  return new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle(HOW_IT_WORKS_MESSAGE_TITLE)
+    .setDescription(
+      `Na Noctra, sua atividade dentro do servidor gera experiência automaticamente.\n\n` +
+      `Ao conversar, participar da comunidade e interagir nos canais liberados, você acumula XP e aumenta seu nível com o tempo.\n\n` +
+      `**Como funciona:**\n` +
+      `✦ Envie mensagens e participe naturalmente.\n` +
+      `✦ Cada interação pode conceder experiência.\n` +
+      `✦ Ao subir de nível, você pode desbloquear cargos exclusivos.\n` +
+      `✦ Quanto mais presente você for, maior será sua evolução na comunidade.\n\n` +
+      `Evite spam ou mensagens repetidas. O sistema valoriza participação real, não flood.`
+    )
+    .setFooter({ text: 'Noctra Core • Evolua participando da comunidade' });
+}
+
+async function ensureHowItWorksMessage(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.howItWorksChannelId) return;
+
+  const channel = guild.channels.cache.get(config.howItWorksChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const embed = buildHowItWorksEmbed();
+  const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+
+  const existingMessage = messages?.find(message =>
+    message.author.id === client.user.id &&
+    message.embeds?.[0]?.title === HOW_IT_WORKS_MESSAGE_TITLE
+  );
+
+  if (existingMessage) {
+    await existingMessage.edit({ embeds: [embed] }).catch(() => {});
+    await existingMessage.pin().catch(() => {});
+    return;
+  }
+
+  const sentMessage = await channel.send({ embeds: [embed] });
+  await sentMessage.pin().catch(() => {});
+}
+
   visitorRoleId: String,
   memberRoleId: String,
   staffRoleId: String,
@@ -559,6 +605,7 @@ client.once('ready', async () => {
   for (const guild of client.guilds.cache.values()) {
     await ensureConfig(guild.id);
     await ensureRulesMessage(guild);
+    await ensureHowItWorksMessage(guild);
   }
 
   const rest = new REST({ version: '10' }).setToken(token);
