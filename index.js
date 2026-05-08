@@ -171,12 +171,18 @@ const raidMap = new Map();
 const gifsEntrada = [
   'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExaWx0aG5ycDcyZWwzcm95cms1aWdjbHBhbDRweWVrZmEzMjhzY2RsbyZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/2LDlwWdQW3UxLgYrxU/giphy.gif',
   'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2pwejhuMWZtYnR3amR0cmpkczA3ejRqMTQ0aWl3a2swZmhud2lhMCZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/hg9iCY1kROgryA3IM0/giphy.gif',
-  'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGM3cm02ZjdxaHM4N3c5aG02aTZ6d2YxYTVscnBqbnBjNXgxeTdsbyZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/E2c87xRlZMnHRTEmoe/giphy.gif'
+  'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGM3cm02ZjdxaHM4N3c5aG02aTZ6d2YxYTVscnBqbnBjNXgxeTdsbyZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/E2c87xRlZMnHRTEmoe/giphy.gif',
+  'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnZtY2drdGEzamhpZ3YyOWlnNWppMXAxZnJ6bTBmbDRyZWNtZWpydSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/MLT8ctuVCZfX4LTavg/giphy.gif',
+  'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzY0YjF3dTkyMHh1b2k4OGRhamkyaTJteDVldWVuY2M3NWRnM3hveCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FeAxKYM3TUjaCr3y0T/giphy.gif',
+  'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExMjRqbWp1NGVscThqdnRyb283OXVrZGV4aHo2dGlka2tnN3ByOGdrcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2xPViTLgsxlOrDBxDn/giphy.gif',
+  'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjVqcHV4YXBla2o2MXI4cGJydW81eWxjaG85Y2xmN2tpYzBkMzVvMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/q6oUS1vaXPndgrHjvU/giphy.gif'
 ];
-
 const gifsSaida = [
   'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExbjBvdzk5dGE2dWljbTYwcDI4M2YzdHdvdDU0bWxtaXFwaTN5YW9pbSZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/shVJpcnY5MZVK/giphy.gif',
-  'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWZ0MDUwcHJ5MWlnczZra2xlZzZ0YTQ1dWx5dXY0aWFpYzM3NzZrZCZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/cUl8fuIG75QWs/giphy.gif'
+  'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWZ0MDUwcHJ5MWlnczZra2xlZzZ0YTQ1dWx5dXY0aWFpYzM3NzZrZCZlcD12MV9pbnRlcm5hbF9naWQmY3Q9Zw/cUl8fuIG75QWs/giphy.gif',
+  'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWphZTdkOTNuOXBjd3Y0ZzdtMGhlNzZ4c2hyOWdmcWxvMWJ4dnl2MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ubO2LLKrX5XdtI9Mnr/giphy.gif',
+  'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExeWc1YW0ycGRseWxyYmtxMjYzdmMwdzdiajVvM2dvaGc5YXptOXVkZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/tvK94q5OZ11tMucboN/giphy.gif',
+  'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExODd4ODAzdTlsZnd6aGQ2MnV5N3kwZ202cnBpNnBvNjZrbDN0dzBrZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SznCZeibJJiOK6QbhT/giphy.gif'
 ];
 
 function pick(list) {
@@ -229,16 +235,16 @@ function canModerate(interaction, targetMember, permission) {
   const botMember = interaction.guild.members.me;
 
   if (!targetMember) return 'Usuario nao encontrado no servidor.';
-  if (targetMember.id === interaction.guild.ownerId) return 'Nao posso punir o dono do servidor.';
-  if (targetMember.id === interaction.user.id) return 'Voce nao pode punir a si mesmo.';
-  if (targetMember.id === client.user.id) return 'Eu nao posso punir a mim mesmo.';
-  if (!moderator.permissions.has(permission)) return 'Voce nao tem permissao para isso.';
-  if (!botMember.permissions.has(permission)) return 'Eu nao tenho permissao suficiente para isso.';
+  if (targetMember.id === interaction.guild.ownerId) return 'Não posso punir o dono do servidor.';
+  if (targetMember.id === interaction.user.id) return 'Você nao pode punir a si mesmo.';
+  if (targetMember.id === client.user.id) return 'Eu não posso punir a mim mesmo.';
+  if (!moderator.permissions.has(permission)) return 'Você não tem permissão para isso.';
+  if (!botMember.permissions.has(permission)) return 'Eu não tenho permissão suficiente para isso.';
   if (targetMember.roles.highest.position >= moderator.roles.highest.position && interaction.guild.ownerId !== interaction.user.id) {
-    return 'Esse usuario tem cargo igual ou acima do seu.';
+    return 'Esse usuário tem cargo igual ou acima do seu.';
   }
   if (targetMember.roles.highest.position >= botMember.roles.highest.position) {
-    return 'Meu cargo precisa ficar acima do cargo desse usuario.';
+    return 'Meu cargo precisa ficar acima do cargo desse usuário.';
   }
 
   return null;
@@ -518,7 +524,7 @@ client.on('guildMemberAdd', async (member) => {
   if ((raidDetected || newAccount) && config.antiRaid.quarantineRoleId) {
     const role = member.guild.roles.cache.get(config.antiRaid.quarantineRoleId);
     if (role) await member.roles.add(role).catch(() => {});
-    await sendLog(member.guild, 'Protecao anti-raid', `${member} recebeu quarentena.`, '#ff5555');
+    await sendLog(member.guild, 'Proteção anti-raid', `${member} recebeu quarentena.`, '#ff5555');
   } else if (config.visitorRoleId) {
     const role = member.guild.roles.cache.get(config.visitorRoleId);
     if (role) await member.roles.add(role).catch(() => {});
@@ -527,8 +533,8 @@ client.on('guildMemberAdd', async (member) => {
   const channel = member.guild.channels.cache.get(config.welcomeChannelId);
   if (channel) {
     const mensagens = [
-      `✦ ${member}, foi marcado pela escuridao da **Noctra Core**.\n❖ Nao ha saida.\n☾ Nao ha luz.`,
-      `✧ ${member}, despertou no vazio...\n☾ Nao ha volta agora.`,
+      `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
+      `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
       `❖ ${member} entrou na **Noctra Core**.`
     ];
 
@@ -553,8 +559,9 @@ client.on('guildMemberRemove', async (member) => {
       .setColor('#111111')
       .setDescription(
         `☠ saiu da Noctra\n\n` +
-        `✦ ${member.user} desapareceu na escuridao...\n\n` +
-        `O vazio agora se torna mais pesado.`
+        `✦ ${member.user} desapareceu na escuridão...💔​\n\n` +
+        `O vazio agora se torna mais pesado.` +
+        `Espero que você se perca!​💢​​` 
       )
       .setImage(pick(gifsSaida));
 
@@ -963,14 +970,14 @@ client.on('interactionCreate', async (interaction) => {
       if (wallet.lastDailyAt && now - wallet.lastDailyAt.getTime() < day) {
         const remaining = day - (now - wallet.lastDailyAt.getTime());
         const hours = Math.ceil(remaining / (60 * 60 * 1000));
-        return interaction.reply({ content: `Voce ja coletou hoje. Tente novamente em ${hours}h.`, ephemeral: true });
+        return interaction.reply({ content: `Você já coletou hoje. Tente novamente em ${hours}h.`, ephemeral: true });
       }
 
       wallet.coins += config.economy.dailyAmount;
       wallet.lastDailyAt = new Date();
       await wallet.save();
 
-      await interaction.reply(`Voce coletou ${config.economy.dailyAmount} moedas. Saldo: ${wallet.coins}.`);
+      await interaction.reply(`Você coletou ${config.economy.dailyAmount} moedas. Saldo: ${wallet.coins}.`);
       return;
     }
 
