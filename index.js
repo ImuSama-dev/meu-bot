@@ -795,47 +795,109 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isButton()) {
-      if (interaction.customId === 'ticket_open') {
-        const config = await ensureConfig(interaction.guild.id);
-        const existing = await Ticket.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, status: 'open' });
+ if (interaction.customId === 'ticket_open') {
+  await interaction.deferReply({ ephemeral: true });
 
-        if (existing) {
-          return interaction.reply({ content: `Voce ja tem um ticket aberto: <#${existing.channelId}>`, ephemeral: true });
-        }
+  const config = await ensureConfig(interaction.guild.id);
 
-        const overwrites = [
-          { id: interaction.guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-          { id: interaction.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-          { id: interaction.guild.members.me.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
-        ];
+  if (!interaction.guild.members.me.permissions.has(PermissionFlagsBits.ManageChannels)) {
+    return interaction.editReply('Eu preciso da permissão **Gerenciar canais** para abrir tickets.');
+  }
 
-        if (config.staffRoleId) {
-          overwrites.push({ id: config.staffRoleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
-        }
+  const existing = await Ticket.findOne({
+    guildId: interaction.guild.id,
+    userId: interaction.user.id,
+    status: 'open'
+  });
 
-        const channel = await interaction.guild.channels.create({
-          name: `ticket-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
-          type: ChannelType.GuildText,
-          parent: config.ticketCategoryId || undefined,
-          permissionOverwrites: overwrites
-        });
+  if (existing) {
+    return interaction.editReply(`Você já tem um ticket aberto: <#${existing.channelId}>`);
+  }
 
-        await Ticket.create({ guildId: interaction.guild.id, channelId: channel.id, userId: interaction.user.id });
+  const category = config.ticketCategoryId
+    ? interaction.guild.channels.cache.get(config.ticketCategoryId)
+    : null;
 
-        const closeRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId('ticket_close').setLabel('Fechar ticket').setStyle(ButtonStyle.Danger)
-        );
+  if (config.ticketCategoryId && (!category || category.type !== ChannelType.GuildCategory)) {
+    return interaction.editReply(
+      'A categoria de tickets configurada não foi encontrada ou não é uma categoria válida. Use `/config canal tipo:categoria-ticket` novamente.'
+    );
+  }
 
-        const embed = new EmbedBuilder()
-          .setColor('#2b2d31')
-          .setTitle('Ticket aberto')
-          .setDescription(`${interaction.user}, descreva o que voce precisa. A staff vai te responder aqui.`);
+  const overwrites = [
+    {
+      id: interaction.guild.roles.everyone.id,
+      deny: [PermissionFlagsBits.ViewChannel]
+    },
+    {
+      id: interaction.user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory
+      ]
+    },
+    {
+      id: interaction.guild.members.me.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.ManageChannels
+      ]
+    }
+  ];
 
-        await channel.send({ embeds: [embed], components: [closeRow] });
-        await interaction.reply({ content: `Ticket criado: ${channel}`, ephemeral: true });
-        await sendLog(interaction.guild, 'Ticket aberto', `${interaction.user} abriu ${channel}.`, '#5865f2');
-        return;
-      }
+  if (config.staffRoleId) {
+    overwrites.push({
+      id: config.staffRoleId,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory
+      ]
+    });
+  }
+
+  const safeName = interaction.user.username
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '')
+    .slice(0, 20) || interaction.user.id;
+
+  const channel = await interaction.guild.channels.create({
+    name: `ticket-${safeName}`,
+    type: ChannelType.GuildText,
+    parent: category ? category.id : undefined,
+    permissionOverwrites: overwrites,
+    reason: `Ticket aberto por ${interaction.user.tag}`
+  });
+
+  await Ticket.create({
+    guildId: interaction.guild.id,
+    channelId: channel.id,
+    userId: interaction.user.id
+  });
+
+  const closeRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('ticket_close')
+      .setLabel('Fechar ticket')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('☾ Ticket aberto')
+    .setDescription(
+      `${interaction.user}, descreva com calma o que você precisa.\n\n` +
+      `A staff da Noctra vai responder assim que possível.`
+    );
+
+  await channel.send({ embeds: [embed], components: [closeRow] });
+  await interaction.editReply(`Ticket criado: ${channel}`);
+  await sendLog(interaction.guild, 'Ticket aberto', `${interaction.user} abriu ${channel}.`, '#5865f2');
+  return;
+}
 
       if (interaction.customId === 'ticket_close') {
         const ticket = await Ticket.findOne({ guildId: interaction.guild.id, channelId: interaction.channel.id, status: 'open' });
