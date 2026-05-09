@@ -412,7 +412,7 @@ async function addCoins(serverId, userId, amount) {
 }
 
 async function buildTranscript(channel) {
-  const messages = await channel.messages.fetch({ limit: 100 });
+  const messages = await channel.messages.fetch({ limit: 1000 });
   return messages
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
     .map(msg => `[${msg.createdAt.toISOString()}] ${msg.author.tag}: ${msg.content || '[sem texto]'}`)
