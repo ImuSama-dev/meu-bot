@@ -1,2 +1,3 @@
-node_modules
-.envfirebase-service-account.json
+.env
+firebase-service-account.json
+node_modules/
