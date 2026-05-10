@@ -1,6 +1,17 @@
 require('dotenv').config();
 
 const {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  NoSubscriberBehavior,
+  entersState,
+  VoiceConnectionStatus
+} = require('@discordjs/voice');
+
+const play = require('play-dl');
+const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -199,6 +210,7 @@ const client = new Client({
 const xpCooldown = new Map();
 const spamMap = new Map();
 const raidMap = new Map();
+const musicPlayers = new Map();
 
 // ================= GIFS =================
 const gifsEntrada = [
@@ -514,7 +526,22 @@ const commands = [
 new SlashCommandBuilder()
   .setName('recrutamento')
   .setDescription('Envia a mensagem de recrutamento'),
-  
+  new SlashCommandBuilder()
+  .setName('play')
+  .setDescription('Toca uma musica do YouTube')
+  .addStringOption(o =>
+    o.setName('musica')
+      .setDescription('Nome ou link da musica')
+      .setRequired(true)
+  ),
+
+new SlashCommandBuilder()
+  .setName('stop')
+  .setDescription('Para a musica'),
+
+new SlashCommandBuilder()
+  .setName('skip')
+  .setDescription('Pula a musica atual'),
   new SlashCommandBuilder()
     .setName('leveladmin')
     .setDescription('Administra XP e nivel.')
@@ -1149,6 +1176,123 @@ await interaction.reply({
   ephemeral: true
 });
       return;
+}
+    if (command === 'play') {
+  const query = interaction.options.getString('musica');
+  const voiceChannel = interaction.member.voice.channel;
+
+  if (!voiceChannel) {
+    return interaction.reply({
+      content: 'Entre em uma call primeiro.',
+      ephemeral: true
+    });
+  }
+
+  await interaction.deferReply();
+
+  try {
+    const connection = joinVoiceChannel({
+      channelId: voiceChannel.id,
+      guildId: interaction.guild.id,
+      adapterCreator: interaction.guild.voiceAdapterCreator
+    });
+
+    await entersState(connection, VoiceConnectionStatus.Ready, 30000);
+
+    const player = createAudioPlayer({
+      behaviors: {
+        noSubscriber: NoSubscriberBehavior.Pause
+      }
+    });
+
+    const search = await play.search(query, {
+      limit: 1
+    });
+
+    if (!search.length) {
+      return interaction.editReply('Nenhuma música encontrada.');
+    }
+
+    const url = search[0].url;
+
+    const stream = await play.stream(url);
+
+    const resource = createAudioResource(stream.stream, {
+      inputType: stream.type
+    });
+
+    player.play(resource);
+    connection.subscribe(player);
+
+    musicPlayers.set(interaction.guild.id, {
+      connection,
+      player
+    });
+
+    const embed = new EmbedBuilder()
+      .setColor('#111111')
+      .setTitle('☾ Tocando agora')
+      .setDescription(
+        `✦ **${search[0].title}**\n\n` +
+        `❖ Pedido por: ${interaction.user}\n` +
+        `☾ Canal: ${voiceChannel}`
+      )
+      .setThumbnail(search[0].thumbnails[0].url)
+      .setFooter({
+        text: 'Noctra Music'
+      });
+
+    await interaction.editReply({
+      embeds: [embed]
+    });
+
+    player.on(AudioPlayerStatus.Idle, () => {
+      connection.destroy();
+      musicPlayers.delete(interaction.guild.id);
+    });
+
+  } catch (err) {
+    console.log(err);
+
+    interaction.editReply('Erro ao tocar música.');
+  }
+
+  return;
+}
+
+if (command === 'stop') {
+  const musicData = musicPlayers.get(interaction.guild.id);
+
+  if (!musicData) {
+    return interaction.reply({
+      content: 'Não há música tocando.',
+      ephemeral: true
+    });
+  }
+
+  musicData.player.stop();
+  musicData.connection.destroy();
+
+  musicPlayers.delete(interaction.guild.id);
+
+  await interaction.reply('☾ Música parada.');
+  return;
+}
+
+if (command === 'skip') {
+  const musicData = musicPlayers.get(interaction.guild.id);
+
+  if (!musicData) {
+    return interaction.reply({
+      content: 'Não há música tocando.',
+      ephemeral: true
+    });
+  }
+
+  musicData.player.stop();
+
+  await interaction.reply('☾ Música pulada.');
+  return;
 }
   if (command === 'top') {
     const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
