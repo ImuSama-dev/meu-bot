@@ -275,7 +275,11 @@ async function checkNewChapterUpdates(guild) {
   const manhwa = manhwaDoc.data();
   const manhwaId = manhwaDoc.id;
   const chapterId = chapterDoc.id;
-  const itemId = `${manhwaId}:${chapterId}`;
+  const updatedAt = chapter.updatedAt?.toDate
+  ? chapter.updatedAt.toDate().toISOString()
+  : String(chapter.updatedAt || Date.now());
+
+const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
 
   const alreadySent = await Announcement.findOne({
     guildId: guild.id,
@@ -292,7 +296,7 @@ async function checkNewChapterUpdates(guild) {
 
   const embed = new EmbedBuilder()
     .setColor('#111111')
-    .setTitle('☾ Novo capítulo disponível')
+    .setTitle('☾ Capítulo atualizado na Noctra')
     .setDescription(
       `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
       `✦ **Obra:** ${obraTitulo}\n` +
@@ -488,7 +492,11 @@ const commands = [
   new SlashCommandBuilder()
     .setName('top')
     .setDescription('Mostra ranking de XP.'),
-
+  
+new SlashCommandBuilder()
+  .setName('recrutamento')
+  .setDescription('Envia a mensagem de recrutamento'),
+  
   new SlashCommandBuilder()
     .setName('leveladmin')
     .setDescription('Administra XP e nivel.')
@@ -1027,6 +1035,55 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (command === 'top') {
+      if (command === "recrutamento") {
+
+const embed = new EmbedBuilder()
+.setColor("#8b5cf6")
+.setTitle("✦ Recrutamento • Noctra Core")
+.setDescription(`
+A Noctra Core está recrutando pessoas interessadas em participar da equipe de tradução de obras asiáticas, principalmente Yuri e Yaoi.
+
+O projeto busca pessoas comprometidas, organizadas e que realmente tenham interesse em entregar capítulos bem feitos para os leitores.
+
+As obras serão enviadas pela administração, porém cada pessoa poderá escolher algumas preferências antes de começar, como:
+• Yuri ou Yaoi;
+• Obras +18 ou não.
+
+Com base nisso, as obras serão selecionadas e enviadas conforme a preferência escolhida. Os capítulos poderão estar em inglês ou coreano, dependendo da origem da obra.
+
+━━━━━━━━━━━━━━━━━━━
+
+25 capítulos por mês = R$25 mensais.
+
+A proposta remunerada será válida apenas para as 5 primeiras pessoas aprovadas para a equipe de tradução.
+
+━━━━━━━━━━━━━━━━━━━
+
+Após a conclusão correta dos primeiros 10 capítulos, será realizado o envio inicial de R$10.
+
+━━━━━━━━━━━━━━━━━━━
+
+Também oferecemos ajuda com:
+• Photoshop/Photopea;
+• instalação de fontes;
+• organização das falas;
+• limpeza básica e edição.
+
+━━━━━━━━━━━━━━━━━━━
+
+Interessados podem entrar em contato diretamente com a administração.
+`)
+.setFooter({
+text: "Noctra Core • Recrutamento Oficial"
+})
+.setTimestamp();
+
+await interaction.reply({
+embeds: [embed]
+});
+
+return;
+}
       const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
       let desc = '🏆 Top da Noctra\n\n';
 
@@ -1222,7 +1279,6 @@ client.on('interactionCreate', async (interaction) => {
         await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [`levelRoles.${level}`]: role.id } });
         return interaction.reply({ content: `Nivel ${level} agora da o cargo ${role}.`, ephemeral: true });
       }
-
       const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
       return interaction.reply({
         content: [
