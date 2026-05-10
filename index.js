@@ -29,9 +29,7 @@ const {
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
 const admin = require('firebase-admin');
-const serviceAccount = JSON.parse(
-  process.env.FIREBASE_SERVICE_ACCOUNT.replace(/\\n/g, '\n')
-);
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
