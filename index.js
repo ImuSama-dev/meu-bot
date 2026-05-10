@@ -1199,7 +1199,11 @@ const connection = joinVoiceChannel({
   selfDeaf: false,
   selfMute: false
 });
-
+    
+connection.on('stateChange', (oldState, newState) => {
+  console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
+});
+    
     await entersState(connection, VoiceConnectionStatus.Ready, 120000);
 
     const player = createAudioPlayer({
