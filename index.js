@@ -112,7 +112,7 @@ const guildConfigSchema = new mongoose.Schema({
   xpBlockedChannels: { type: [String], default: [] },
   automod: {
     enabled: { type: Boolean, default: true },
-    capsMinLength: { type: Number, default: 10 },
+    capsMinLength: { type: Number, default: 100 },
     maxLength: { type: Number, default: 400 },
     spamLimit: { type: Number, default: 6 },
     spamWindowMs: { type: Number, default: 5000 },
