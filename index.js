@@ -1198,7 +1198,7 @@ await interaction.reply({
       adapterCreator: interaction.guild.voiceAdapterCreator
     });
 
-    await entersState(connection, VoiceConnectionStatus.Ready, 30000);
+    await entersState(connection, VoiceConnectionStatus.Ready, 60000);
 
     const player = createAudioPlayer({
       behaviors: {
