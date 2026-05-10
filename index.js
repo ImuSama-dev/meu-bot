@@ -287,8 +287,12 @@ const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
     itemId
   });
 
-  if (alreadySent) return;
+  if (alreadySent) {
+  console.log("JÁ ENVIADO:", itemId);
+  return;
+}
 
+console.log("NOVO ANÚNCIO:", itemId);
   const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaId;
   const capituloTitulo = chapter.titulo || chapter.title || `Capitulo ${chapterId}`;
   const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
@@ -309,7 +313,9 @@ const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
 
   if (capaUrl) embed.setImage(capaUrl);
 
-  await channel.send({ embeds: [embed] });
+  console.log("ENVIANDO EMBED NO CANAL:", channel.id);
+
+await channel.send({ embeds: [embed] });
 
   await Announcement.create({
     guildId: guild.id,
