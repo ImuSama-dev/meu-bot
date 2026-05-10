@@ -252,30 +252,36 @@ async function checkNewChapterUpdates(guild) {
   if (!channel || !channel.isTextBased()) return;
 
   const snapshot = await firestore
-    .collectionGroup('chapters')
-    .orderBy('updatedAt', 'desc')
-    .limit(1)
-    .get()
+  .collectionGroup('chapters')
+  .limit(10)
+  .get()
     .catch(err => {
       console.log('Erro ao buscar capitulos no Firebase:', err);
       return null;
     });
 
-  if (!snapshot || snapshot.empty) return;
+if (!snapshot || snapshot.empty) return;
 
-  const chapterDoc = snapshot.docs[0];
-  const chapter = chapterDoc.data();
+const docsOrdenados = snapshot.docs.sort((a, b) => {
+  const dataA = a.data().updatedAt?.toMillis ? a.data().updatedAt.toMillis() : 0;
+  const dataB = b.data().updatedAt?.toMillis ? b.data().updatedAt.toMillis() : 0;
+  return dataB - dataA;
+});
 
-  const manhwaRef = chapterDoc.ref.parent.parent;
-  if (!manhwaRef) return;
+const chapterDoc = docsOrdenados[0];
+const chapter = chapterDoc.data();
 
-  const manhwaDoc = await manhwaRef.get();
-  if (!manhwaDoc.exists) return;
+const manhwaRef = chapterDoc.ref.parent.parent;
+if (!manhwaRef) return;
 
-  const manhwa = manhwaDoc.data();
-  const manhwaId = manhwaDoc.id;
-  const chapterId = chapterDoc.id;
-  const updatedAt = chapter.updatedAt?.toDate
+const manhwaDoc = await manhwaRef.get();
+if (!manhwaDoc.exists) return;
+
+const manhwa = manhwaDoc.data();
+const manhwaId = manhwaDoc.id;
+const chapterId = chapterDoc.id;
+
+const updatedAt = chapter.updatedAt?.toDate
   ? chapter.updatedAt.toDate().toISOString()
   : String(chapter.updatedAt || Date.now());
 
