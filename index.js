@@ -10,7 +10,8 @@ const {
   VoiceConnectionStatus
 } = require('@discordjs/voice');
 
-const play = require('play-dl');
+const ytdl = require('ytdl-core');
+const ytSearch = require('yt-search');
 const ffmpeg = require('ffmpeg-static');
 const {
   ActionRowBuilder,
@@ -1215,22 +1216,20 @@ connection.on('stateChange', (oldState, newState) => {
       }
     });
 
-    const search = await play.search(query, {
-      limit: 1
-    });
+const search = await ytSearch(query);
 
-    if (!search.length) {
-      return interaction.editReply('Nenhuma música encontrada.');
-    }
+if (!search.videos.length) {
+  return interaction.editReply('Nenhuma música encontrada.');
+}
 
-    const url = search[0].url;
+const video = search.videos[0];
 
-    const stream = await play.stream(url);
-
-const resource = createAudioResource(stream.stream, {
-  inputType: stream.type,
-  inlineVolume: true
+const stream = ytdl(video.url, {
+  filter: 'audioonly',
+  highWaterMark: 1 << 25
 });
+
+const resource = createAudioResource(stream);
 
     player.play(resource);
     connection.subscribe(player);
@@ -1244,11 +1243,11 @@ const resource = createAudioResource(stream.stream, {
       .setColor('#111111')
       .setTitle('☾ Tocando agora')
       .setDescription(
-        `✦ **${search[0].title}**\n\n` +
+        `✦ **${video.title}**\n\n` +
         `❖ Pedido por: ${interaction.user}\n` +
         `☾ Canal: ${voiceChannel}`
       )
-      .setThumbnail(search[0].thumbnails[0].url)
+      .setThumbnail(video.thumbnail)
       .setFooter({
         text: 'Noctra Music'
       });
