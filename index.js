@@ -1131,7 +1131,7 @@ const embed = new EmbedBuilder()
 
 const config = await ensureConfig(interaction.guild.id);
 
-const canalAvisos = interaction.guild.channels.cache.get('1502773491492196572');
+const canalAvisos = interaction.guild.channels.cache.get('1502761123852849212');
 
 if (!canalAvisos) {
   return interaction.reply({
