@@ -1204,7 +1204,9 @@ connection.on('stateChange', (oldState, newState) => {
   console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
 });
     
-    await entersState(connection, VoiceConnectionStatus.Ready, 120000);
+   await entersState(connection, VoiceConnectionStatus.Ready, 30000).catch(() => {
+  throw new Error('O bot não conseguiu conectar na call. Verifique se ele tem permissão de Ver Canal, Conectar e Falar.');
+});
 
     const player = createAudioPlayer({
       behaviors: {
@@ -1262,7 +1264,7 @@ const resource = createAudioResource(stream.stream, {
   } catch (err) {
     console.log(err);
 
-    interaction.editReply('Erro ao tocar música.');
+    await interaction.editReply(`Erro ao tocar música: ${err.message}`);
   }
 
   return;
