@@ -1192,27 +1192,19 @@ await interaction.reply({
   await interaction.deferReply();
 
   try {
-<<<<<<< HEAD
- const connection = joinVoiceChannel({
-=======
 const connection = joinVoiceChannel({
->>>>>>> 52cd681f084c1d9fca808aee8b4a2b61659766ff
   channelId: voiceChannel.id,
   guildId: interaction.guild.id,
   adapterCreator: interaction.guild.voiceAdapterCreator,
   selfDeaf: false,
   selfMute: false
 });
-
-<<<<<<< HEAD
+    
 connection.on('stateChange', (oldState, newState) => {
   console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
 });
-
-await entersState(connection, VoiceConnectionStatus.Ready, 120000);
-=======
+    
     await entersState(connection, VoiceConnectionStatus.Ready, 120000);
->>>>>>> 52cd681f084c1d9fca808aee8b4a2b61659766ff
 
     const player = createAudioPlayer({
       behaviors: {
