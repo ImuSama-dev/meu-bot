@@ -568,6 +568,7 @@ new SlashCommandBuilder()
         { name: 'boas-vindas', value: 'welcomeChannelId' },
         { name: 'saida', value: 'exitChannelId' },
         { name: 'logs', value: 'logChannelId' },
+        { name: 'atualizações', value: 'updatesChannelId' },
         { name: 'regras', value: 'rulesChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
