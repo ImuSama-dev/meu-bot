@@ -55,6 +55,7 @@ const DEFAULT_CONFIG = {
   },
 
     updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
+  announcementsChannelId: process.env.ANNOUNCEMENTS_CHANNEL_ID || '1502773491492196572',
 siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/index.html',
   xpBlockedChannels: [],
   automod: {
@@ -103,6 +104,7 @@ const guildConfigSchema = new mongoose.Schema({
   rulesChannelId: String,
   rulesEmoji: String,
   updatesChannelId: String,
+  announcementsChannelId: String,
   siteUrl: String,
   visitorRoleId: String,
   memberRoleId: String,
@@ -440,6 +442,10 @@ const commands = [
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Verifica se o bot esta online.'),
+  
+  new SlashCommandBuilder()
+  .setName('avisos')
+  .setDescription('Envia a mensagem oficial de avisos'),
 
   new SlashCommandBuilder()
     .setName('clear')
@@ -1050,7 +1056,52 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ embeds: [embed] });
       return;
     }
+if (command === 'avisos') {
 
+const embed = new EmbedBuilder()
+.setColor('#111111')
+.setTitle('☾ Avisos Oficiais • Noctra Core')
+.setDescription(
+`✦ Acompanhe este canal para receber comunicados importantes da Noctra Core.\n\n` +
+
+`❖ Caso o site fique offline, entre em manutenção ou apresente instabilidades, todas as informações serão enviadas aqui.\n\n` +
+
+`✦ Este canal também será utilizado para:\n` +
+`• manutenção do site\n` +
+`• ajustes no servidor\n` +
+`• problemas técnicos\n\n` +
+
+`☾ Permaneça atento aos avisos enviados pela staff.\n\n` +
+`────────────────────\n` +
+`Noctra Core • Entre na escuridão.`
+)
+.setFooter({
+  text: 'Noctra Core • Sistema Oficial'
+})
+.setTimestamp();
+
+const config = await ensureConfig(interaction.guild.id);
+
+const canalAvisos = interaction.guild.channels.cache.get(config.announcementsChannelId);
+
+if (!canalAvisos) {
+  return interaction.reply({
+    content: 'Canal de avisos não configurado.',
+    ephemeral: true
+  });
+}
+
+await canalAvisos.send({
+  embeds: [embed]
+});
+
+await interaction.reply({
+  content: `Aviso enviado em ${canalAvisos}.`,
+  ephemeral: true
+});
+
+return;
+}
     if (command === 'top') {
       if (command === "recrutamento") {
 
