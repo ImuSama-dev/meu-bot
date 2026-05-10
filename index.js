@@ -59,7 +59,7 @@ siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/inde
   xpBlockedChannels: [],
   automod: {
     enabled: true,
-    capsMinLength: 10,
+    capsMinLength: 100,
     maxLength: 400,
     spamLimit: 6,
     spamWindowMs: 5000,
