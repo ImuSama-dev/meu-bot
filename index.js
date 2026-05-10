@@ -1521,7 +1521,19 @@ if (command === 'skip') {
     else interaction.reply(payload).catch(() => {});
   }
 });
+// ================= SERVIDOR WEB RENDER =================
+const express = require('express');
+const app = express();
 
+app.get('/', (req, res) => {
+  res.send('Mimi online!');
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor web ativo na porta ${PORT}`);
+});
 // ================= ONLINE =================
 startBot();
 
