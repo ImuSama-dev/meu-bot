@@ -736,6 +736,10 @@ client.on('messageCreate', async (msg) => {
   if (msg.channel.id === config.rulesChannelId) return;
 
   if (config.automod.enabled) {
+  const textoSemEspaco = msg.content.replace(/\s/g, '').toLowerCase();
+  const ehRisadaKKK = /^k+$/.test(textoSemEspaco);
+
+  if (!ehRisadaKKK) {
     const key = `${msg.guild.id}:${msg.author.id}`;
     const spamCount = countRecent(spamMap, key, config.automod.spamWindowMs);
 
@@ -748,7 +752,7 @@ client.on('messageCreate', async (msg) => {
       return;
     }
 
-    if (msg.content.length > config.automod.capsMinLength && msg.content === msg.content.toUpperCase()) {
+    if (msg.content.length > 100 && msg.content === msg.content.toUpperCase()) {
       await msg.delete().catch(() => {});
       await sendLog(msg.guild, 'Mensagem apagada', `${msg.author} enviou CAPS em ${msg.channel}.`, '#faa61a');
       return;
@@ -760,7 +764,7 @@ client.on('messageCreate', async (msg) => {
       return;
     }
   }
-
+}
   if (!config.xpBlockedChannels.includes(msg.channel.id)) {
     const levelUp = await addXP(msg.guild.id, msg.author.id, msg.member, config);
     if (levelUp) {
