@@ -11,6 +11,7 @@ const {
 } = require('@discordjs/voice');
 
 const play = require('play-dl');
+const ffmpeg = require('ffmpeg-static');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -1217,9 +1218,10 @@ await interaction.reply({
 
     const stream = await play.stream(url);
 
-    const resource = createAudioResource(stream.stream, {
-      inputType: stream.type
-    });
+const resource = createAudioResource(stream.stream, {
+  inputType: stream.type,
+  inlineVolume: true
+});
 
     player.play(resource);
     connection.subscribe(player);
