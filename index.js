@@ -1191,13 +1191,19 @@ await interaction.reply({
   await interaction.deferReply();
 
   try {
-    const connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: interaction.guild.id,
-      adapterCreator: interaction.guild.voiceAdapterCreator
-    });
+ const connection = joinVoiceChannel({
+  channelId: voiceChannel.id,
+  guildId: interaction.guild.id,
+  adapterCreator: interaction.guild.voiceAdapterCreator,
+  selfDeaf: false,
+  selfMute: false
+});
 
-    await entersState(connection, VoiceConnectionStatus.Ready, 30000);
+connection.on('stateChange', (oldState, newState) => {
+  console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
+});
+
+await entersState(connection, VoiceConnectionStatus.Ready, 120000);
 
     const player = createAudioPlayer({
       behaviors: {
