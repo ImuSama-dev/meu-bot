@@ -1103,57 +1103,55 @@ await interaction.reply({
 
 return;
 }
-    if (command === 'top') {
-      if (command === "recrutamento") {
+    if (command === 'recrutamento') {
 
 const embed = new EmbedBuilder()
-.setColor("#8b5cf6")
-.setTitle("✦ Recrutamento • Noctra Core")
-.setDescription(`
-A Noctra Core está recrutando pessoas interessadas em participar da equipe de tradução de obras asiáticas, principalmente Yuri e Yaoi.
+.setColor('#8b5cf6')
+.setTitle('✦ Recrutamento • Noctra Core')
+.setDescription(
+`A Noctra Core está recrutando pessoas interessadas em participar da equipe de tradução.\n\n` +
 
-O projeto busca pessoas comprometidas, organizadas e que realmente tenham interesse em entregar capítulos bem feitos para os leitores.
+`✦ Procuramos pessoas:\n` +
+`• organizadas\n` +
+`• dedicadas\n` +
+`• interessadas em Yuri ou Yaoi\n\n` +
 
-As obras serão enviadas pela administração, porém cada pessoa poderá escolher algumas preferências antes de começar, como:
-• Yuri ou Yaoi;
-• Obras +18 ou não.
+`❖ As obras serão enviadas pela administração.\n` +
+`❖ Cada pessoa poderá escolher preferências antes de começar.\n\n` +
 
-Com base nisso, as obras serão selecionadas e enviadas conforme a preferência escolhida. Os capítulos poderão estar em inglês ou coreano, dependendo da origem da obra.
+`✦ O projeto busca qualidade, carinho e dedicação em cada capítulo traduzido.\n\n` +
 
-━━━━━━━━━━━━━━━━━━━
-
-25 capítulos por mês = R$25 mensais.
-
-A proposta remunerada será válida apenas para as 5 primeiras pessoas aprovadas para a equipe de tradução.
-
-━━━━━━━━━━━━━━━━━━━
-
-Após a conclusão correta dos primeiros 10 capítulos, será realizado o envio inicial de R$10.
-
-━━━━━━━━━━━━━━━━━━━
-
-Também oferecemos ajuda com:
-• Photoshop/Photopea;
-• instalação de fontes;
-• organização das falas;
-• limpeza básica e edição.
-
-━━━━━━━━━━━━━━━━━━━
-
-Interessados podem entrar em contato diretamente com a administração.
-`)
+`────────────────────\n` +
+`Noctra Core • Recrutamento Oficial`
+)
 .setFooter({
-text: "Noctra Core • Recrutamento Oficial"
+  text: 'Noctra Core • Staff Oficial'
 })
 .setTimestamp();
 
-await interaction.reply({
-embeds: [embed]
+const config = await ensureConfig(interaction.guild.id);
+
+const canalAvisos = interaction.guild.channels.cache.get(config.announcementsChannelId);
+
+if (!canalAvisos) {
+  return interaction.reply({
+    content: 'Canal de avisos não configurado.',
+    ephemeral: true
+  });
+}
+
+await canalAvisos.send({
+  embeds: [embed]
 });
 
-return;
+await interaction.reply({
+  content: `Recrutamento enviado em ${canalAvisos}.`,
+  ephemeral: true
+});
+      return;
 }
-      const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
+  if (command === 'top') {
+    const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
       let desc = '🏆 Top da Noctra\n\n';
 
       for (let i = 0; i < top.length; i++) {
