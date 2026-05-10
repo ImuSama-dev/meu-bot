@@ -587,6 +587,7 @@ new SlashCommandBuilder()
         { name: 'saida', value: 'exitChannelId' },
         { name: 'logs', value: 'logChannelId' },
         { name: 'atualizações', value: 'updatesChannelId' },
+        { name: 'avisos', value: 'announcementsChannelId' },
         { name: 'regras', value: 'rulesChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
