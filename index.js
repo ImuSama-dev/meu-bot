@@ -1196,7 +1196,7 @@ const connection = joinVoiceChannel({
   channelId: voiceChannel.id,
   guildId: interaction.guild.id,
   adapterCreator: interaction.guild.voiceAdapterCreator,
-  selfDeaf: false,
+  selfDeaf: true,
   selfMute: false
 });
     
@@ -1210,7 +1210,7 @@ connection.on('stateChange', (oldState, newState) => {
 
     const player = createAudioPlayer({
       behaviors: {
-        noSubscriber: NoSubscriberBehavior.Pause
+        noSubscriber: NoSubscriberBehavior.Play
       }
     });
 
