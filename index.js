@@ -11,6 +11,7 @@ const {
 } = require('@discordjs/voice');
 
 const play = require('play-dl');
+const ffmpeg = require('ffmpeg-static');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -1191,7 +1192,11 @@ await interaction.reply({
   await interaction.deferReply();
 
   try {
+<<<<<<< HEAD
  const connection = joinVoiceChannel({
+=======
+const connection = joinVoiceChannel({
+>>>>>>> 52cd681f084c1d9fca808aee8b4a2b61659766ff
   channelId: voiceChannel.id,
   guildId: interaction.guild.id,
   adapterCreator: interaction.guild.voiceAdapterCreator,
@@ -1199,11 +1204,15 @@ await interaction.reply({
   selfMute: false
 });
 
+<<<<<<< HEAD
 connection.on('stateChange', (oldState, newState) => {
   console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
 });
 
 await entersState(connection, VoiceConnectionStatus.Ready, 120000);
+=======
+    await entersState(connection, VoiceConnectionStatus.Ready, 120000);
+>>>>>>> 52cd681f084c1d9fca808aee8b4a2b61659766ff
 
     const player = createAudioPlayer({
       behaviors: {
@@ -1223,9 +1232,10 @@ await entersState(connection, VoiceConnectionStatus.Ready, 120000);
 
     const stream = await play.stream(url);
 
-    const resource = createAudioResource(stream.stream, {
-      inputType: stream.type
-    });
+const resource = createAudioResource(stream.stream, {
+  inputType: stream.type,
+  inlineVolume: true
+});
 
     player.play(resource);
     connection.subscribe(player);
