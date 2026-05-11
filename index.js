@@ -1234,11 +1234,11 @@ const stream = ytdl(video.url, {
 const resource = createAudioResource(stream, {
   inlineVolume: true
 });
-    
-resource.volume.setVolume(1);
 
-    player.play(resource);
-    connection.subscribe(player);
+resource.volume.setVolume(1.5);
+
+connection.subscribe(player);
+player.play(resource);
 
     musicPlayers.set(interaction.guild.id, {
       connection,
