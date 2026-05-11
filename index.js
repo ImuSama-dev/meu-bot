@@ -12,7 +12,8 @@ const {
   getVoiceConnection
 } = require('@discordjs/voice');
 
-
+const https = require('https');
+process.env.FFMPEG_PATH = require('ffmpeg-static');
 const ytdl = require('@distube/ytdl-core');
 const ytSearch = require('yt-search');
 const ffmpeg = require('ffmpeg-static');
@@ -1183,6 +1184,13 @@ await interaction.reply({
 });
       return;
 }
+    
+function getHttpStream(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, res => resolve(res)).on('error', reject);
+  });
+}
+    
 if (command === 'play') {
   await interaction.deferReply().catch(err => {
     console.log('NAO CONSEGUI RESPONDER A INTERACTION:', err);
@@ -1247,7 +1255,12 @@ if (command === 'play') {
       return interaction.editReply('Nenhuma música encontrada.');
     }
 
-const video = search.videos[0];
+const video = {
+  title: 'Teste MP3 direto',
+  thumbnail: null
+};
+
+const stream = await getHttpStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
 
 const stream = ytdl(video.url, {
   filter: 'audioonly',
@@ -1261,6 +1274,7 @@ stream.on('error', error => {
 });
 
 const resource = createAudioResource(stream, {
+  inputType: StreamType.Arbitrary,
   inlineVolume: true
 });
 
