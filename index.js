@@ -1183,20 +1183,23 @@ await interaction.reply({
 });
       return;
 }
-  if (command === 'play') {
+if (command === 'play') {
+  await interaction.deferReply().catch(err => {
+    console.log('NAO CONSEGUI RESPONDER A INTERACTION:', err);
+    return null;
+  });
+
+  if (!interaction.deferred && !interaction.replied) return;
+
   const query = interaction.options.getString('musica');
   const voiceChannel = interaction.member.voice.channel;
 
   if (!voiceChannel) {
-    return interaction.reply({
-      content: 'Entre em uma call primeiro.',
-      ephemeral: true
-    });
+    return interaction.editReply('Entre em uma call primeiro.');
   }
 
-  await interaction.deferReply();
-
   try {
+
     let oldConnection = getVoiceConnection(interaction.guild.id);
     if (oldConnection) oldConnection.destroy();
 
@@ -1300,7 +1303,8 @@ player.on('error', (error) => {
   } catch (err) {
     console.log(err);
 
-    await interaction.editReply(`Erro ao tocar música: ${err.message}`);
+  if (interaction.deferred || interaction.replied) {
+  await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
   }
 
   return;
