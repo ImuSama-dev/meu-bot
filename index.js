@@ -1229,7 +1229,11 @@ const stream = ytdl(video.url, {
   highWaterMark: 1 << 25
 });
 
-const resource = createAudioResource(stream);
+const resource = createAudioResource(stream, {
+  inlineVolume: true
+});
+
+resource.volume.setVolume(1);
 
     player.play(resource);
     connection.subscribe(player);
@@ -1256,10 +1260,18 @@ const resource = createAudioResource(stream);
       embeds: [embed]
     });
 
-    player.on(AudioPlayerStatus.Idle, () => {
-      connection.destroy();
-      musicPlayers.delete(interaction.guild.id);
-    });
+player.on(AudioPlayerStatus.Idle, () => {
+  console.log('PLAYER: música terminou ou stream caiu.');
+
+  setTimeout(() => {
+    connection.destroy();
+    musicPlayers.delete(interaction.guild.id);
+  }, 30000);
+});
+
+player.on('error', (error) => {
+  console.log('PLAYER ERRO:', error);
+});
 
   } catch (err) {
     console.log(err);
