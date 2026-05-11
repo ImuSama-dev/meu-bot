@@ -10,7 +10,7 @@ const {
   VoiceConnectionStatus
 } = require('@discordjs/voice');
 
-const ytdl = require('ytdl-core');
+const ytdl = require('@distube/ytdl-core');
 const ytSearch = require('yt-search');
 const ffmpeg = require('ffmpeg-static');
 const {
@@ -1226,13 +1226,15 @@ const video = search.videos[0];
 
 const stream = ytdl(video.url, {
   filter: 'audioonly',
-  highWaterMark: 1 << 25
+  quality: 'highestaudio',
+  highWaterMark: 1 << 25,
+  liveBuffer: 4000
 });
 
 const resource = createAudioResource(stream, {
   inlineVolume: true
 });
-
+    
 resource.volume.setVolume(1);
 
     player.play(resource);
