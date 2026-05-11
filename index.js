@@ -1244,66 +1244,6 @@ await interaction.reply({
       return interaction.editReply('Nenhuma música encontrada.');
     }
 
-    const video = search.videos[0];
-
-    const stream = ytdl(video.url, {
-      filter: 'audioonly',
-      quality: 'highestaudio',
-      highWaterMark: 1 << 25,
-      dlChunkSize: 0
-    });
-
-    stream.on('error', error => {
-      console.log('YTDL ERRO:', error);
-    });
-
-    const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
-      inlineVolume: true
-    });
-
-    resource.volume.setVolume(1);
-
-    connection.subscribe(player);
-    player.play(resource);
-
-    musicPlayers.set(interaction.guild.id, {
-      connection,
-      player
-    });
-
-    player.on(AudioPlayerStatus.Idle, () => {
-      console.log('PLAYER: terminou ou stream caiu.');
-
-      setTimeout(() => {
-        const current = musicPlayers.get(interaction.guild.id);
-        if (current?.player === player) {
-          current.connection.destroy();
-          musicPlayers.delete(interaction.guild.id);
-        }
-      }, 60000);
-    });
-
-    const embed = new EmbedBuilder()
-      .setColor('#111111')
-      .setTitle('☾ Tocando agora')
-      .setDescription(
-        `✦ **${video.title}**\n\n` +
-        `❖ Pedido por: ${interaction.user}\n` +
-        `☾ Canal: ${voiceChannel}`
-      )
-      .setThumbnail(video.thumbnail)
-      .setFooter({ text: 'Noctra Music' });
-
-    await interaction.editReply({ embeds: [embed] });
-  } catch (err) {
-    console.log('ERRO PLAY:', err);
-    await interaction.editReply(`Erro ao tocar música: ${err.message}`);
-  }
-
-  return;
-}
-
 const video = search.videos[0];
 
 const stream = ytdl(video.url, {
