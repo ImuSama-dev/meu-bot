@@ -1253,17 +1253,31 @@ const stream = ytdl(video.url, {
   filter: 'audioonly',
   quality: 'highestaudio',
   highWaterMark: 1 << 25,
-  liveBuffer: 4000
+  dlChunkSize: 0
+});
+
+stream.on('error', error => {
+  console.log('YTDL ERRO:', error);
 });
 
 const resource = createAudioResource(stream, {
   inlineVolume: true
 });
 
-resource.volume.setVolume(1.5);
+resource.volume.setVolume(1);
 
-connection.subscribe(player);
+const subscription = connection.subscribe(player);
+
+if (!subscription) {
+  console.log('ERRO: connection.subscribe(player) falhou.');
+  connection.destroy();
+  return interaction.editReply('Conectei na call, mas não consegui enviar áudio.');
+}
+
 player.play(resource);
+
+console.log('PLAYER STATUS AGORA:', player.state.status);
+
 
     musicPlayers.set(interaction.guild.id, {
       connection,
@@ -1301,10 +1315,13 @@ player.on('error', (error) => {
 });
 
   } catch (err) {
-    console.log(err);
+    console.log('ERRO PLAY:', err);
 
-  if (interaction.deferred || interaction.replied) {
-  await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
+    }
+
+    return;
   }
 
   return;
