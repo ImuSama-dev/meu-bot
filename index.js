@@ -1251,7 +1251,7 @@ const video = search.videos[0];
 
 const stream = ytdl(video.url, {
   filter: 'audioonly',
-  quality: 'highestaudio',
+  quality: 'lowestaudio',
   highWaterMark: 1 << 25,
   dlChunkSize: 0
 });
@@ -1302,12 +1302,17 @@ console.log('PLAYER STATUS AGORA:', player.state.status);
     });
 
 player.on(AudioPlayerStatus.Idle, () => {
-  console.log('PLAYER: música terminou ou stream caiu.');
+  console.log('PLAYER: entrou em Idle. A música terminou, o stream caiu ou nenhum áudio chegou ao Discord.');
 
   setTimeout(() => {
-    connection.destroy();
-    musicPlayers.delete(interaction.guild.id);
-  }, 30000);
+    const current = musicPlayers.get(interaction.guild.id);
+
+    if (current?.player === player && player.state.status === AudioPlayerStatus.Idle) {
+      console.log('PLAYER: destruindo conexão após Idle.');
+      current.connection.destroy();
+      musicPlayers.delete(interaction.guild.id);
+    }
+  }, 120000);
 });
 
 player.on('error', (error) => {
