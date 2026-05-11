@@ -1262,21 +1262,11 @@ const video = {
 
 const stream = await getHttpStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
 
-const stream = ytdl(video.url, {
-  filter: 'audioonly',
-  quality: 'lowestaudio',
-  highWaterMark: 1 << 25,
-  dlChunkSize: 0
-});
-
-stream.on('error', error => {
-  console.log('YTDL ERRO:', error);
-});
-
 const resource = createAudioResource(stream, {
   inputType: StreamType.Arbitrary,
   inlineVolume: true
 });
+
 
 resource.volume.setVolume(1);
 
