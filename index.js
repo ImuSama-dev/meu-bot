@@ -7,8 +7,11 @@ const {
   AudioPlayerStatus,
   NoSubscriberBehavior,
   entersState,
-  VoiceConnectionStatus
+  VoiceConnectionStatus,
+  StreamType,
+  getVoiceConnection
 } = require('@discordjs/voice');
+
 
 const ytdl = require('@distube/ytdl-core');
 const ytSearch = require('yt-search');
@@ -1180,7 +1183,7 @@ await interaction.reply({
 });
       return;
 }
-    if (command === 'play') {
+  if (command === 'play') {
   const query = interaction.options.getString('musica');
   const voiceChannel = interaction.member.voice.channel;
 
@@ -1194,21 +1197,31 @@ await interaction.reply({
   await interaction.deferReply();
 
   try {
-const connection = joinVoiceChannel({
-  channelId: voiceChannel.id,
-  guildId: interaction.guild.id,
-  adapterCreator: interaction.guild.voiceAdapterCreator,
-  selfDeaf: true,
-  selfMute: false
-});
-    
-connection.on('stateChange', (oldState, newState) => {
-  console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
-});
-    
-   await entersState(connection, VoiceConnectionStatus.Ready, 30000).catch(() => {
-  throw new Error('O bot não conseguiu conectar na call. Verifique se ele tem permissão de Ver Canal, Conectar e Falar.');
-});
+    let oldConnection = getVoiceConnection(interaction.guild.id);
+    if (oldConnection) oldConnection.destroy();
+
+    const permissions = voiceChannel.permissionsFor(interaction.guild.members.me);
+    if (!permissions.has(PermissionFlagsBits.Connect) || !permissions.has(PermissionFlagsBits.Speak)) {
+      return interaction.editReply('Eu preciso de permissão para Conectar e Falar nesse canal de voz.');
+    }
+
+    const connection = joinVoiceChannel({
+      channelId: voiceChannel.id,
+      guildId: interaction.guild.id,
+      adapterCreator: interaction.guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false
+    });
+
+    connection.on('stateChange', (oldState, newState) => {
+      console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
+    });
+
+    connection.on('error', error => {
+      console.log('VOICE ERRO:', error);
+    });
+
+    await entersState(connection, VoiceConnectionStatus.Ready, 30000);
 
     const player = createAudioPlayer({
       behaviors: {
@@ -1216,10 +1229,79 @@ connection.on('stateChange', (oldState, newState) => {
       }
     });
 
-const search = await ytSearch(query);
+    player.on('stateChange', (oldState, newState) => {
+      console.log(`PLAYER: ${oldState.status} -> ${newState.status}`);
+    });
 
-if (!search.videos.length) {
-  return interaction.editReply('Nenhuma música encontrada.');
+    player.on('error', error => {
+      console.log('PLAYER ERRO:', error);
+    });
+
+    const search = await ytSearch(query);
+
+    if (!search.videos.length) {
+      connection.destroy();
+      return interaction.editReply('Nenhuma música encontrada.');
+    }
+
+    const video = search.videos[0];
+
+    const stream = ytdl(video.url, {
+      filter: 'audioonly',
+      quality: 'highestaudio',
+      highWaterMark: 1 << 25,
+      dlChunkSize: 0
+    });
+
+    stream.on('error', error => {
+      console.log('YTDL ERRO:', error);
+    });
+
+    const resource = createAudioResource(stream, {
+      inputType: StreamType.Arbitrary,
+      inlineVolume: true
+    });
+
+    resource.volume.setVolume(1);
+
+    connection.subscribe(player);
+    player.play(resource);
+
+    musicPlayers.set(interaction.guild.id, {
+      connection,
+      player
+    });
+
+    player.on(AudioPlayerStatus.Idle, () => {
+      console.log('PLAYER: terminou ou stream caiu.');
+
+      setTimeout(() => {
+        const current = musicPlayers.get(interaction.guild.id);
+        if (current?.player === player) {
+          current.connection.destroy();
+          musicPlayers.delete(interaction.guild.id);
+        }
+      }, 60000);
+    });
+
+    const embed = new EmbedBuilder()
+      .setColor('#111111')
+      .setTitle('☾ Tocando agora')
+      .setDescription(
+        `✦ **${video.title}**\n\n` +
+        `❖ Pedido por: ${interaction.user}\n` +
+        `☾ Canal: ${voiceChannel}`
+      )
+      .setThumbnail(video.thumbnail)
+      .setFooter({ text: 'Noctra Music' });
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (err) {
+    console.log('ERRO PLAY:', err);
+    await interaction.editReply(`Erro ao tocar música: ${err.message}`);
+  }
+
+  return;
 }
 
 const video = search.videos[0];
