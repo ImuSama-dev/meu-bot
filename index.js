@@ -12,8 +12,11 @@ const {
   Partials,
   PermissionFlagsBits,
   SlashCommandBuilder,
-  StringSelectMenuBuilder,
-  Routes
+ StringSelectMenuBuilder,
+ ModalBuilder,
+ TextInputBuilder,
+ TextInputStyle,
+ Routes
 } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
@@ -59,6 +62,7 @@ const token = process.env.TOKEN;
 const mongoUrl = process.env.MONGO_URL;
 const clientId = process.env.CLIENT_ID || '1499822762590736586';
 const guildId = process.env.GUILD_ID || '1334696250070663231';
+const pedidosChannelId = '1503133804477419530';
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -648,7 +652,11 @@ new SlashCommandBuilder()
       .setDescription('Envia painel de ticket.')
       .addChannelOption(o => o.setName('canal').setDescription('Canal.').setRequired(true)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
-
+  
+new SlashCommandBuilder()
+  .setName('pedidos')
+  .setDescription('Envia o painel de pedidos')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   new SlashCommandBuilder()
     .setName('roles')
     .setDescription('Envia painel de cargos por menu.')
@@ -950,6 +958,27 @@ client.on('interactionCreate', async (interaction) => {
     }
 
     if (interaction.isButton()) {
+      if (interaction.customId === 'abrir_pedido') {
+
+const modal = new ModalBuilder()
+.setCustomId('modal_pedido')
+.setTitle('Enviar pedido');
+
+const obraInput = new TextInputBuilder()
+.setCustomId('nome_obra')
+.setLabel('Digite o nome da obra')
+.setStyle(TextInputStyle.Short)
+.setRequired(true)
+.setPlaceholder('Ex: Painter Of The Night');
+
+const row = new ActionRowBuilder().addComponents(obraInput);
+
+modal.addComponents(row);
+
+await interaction.showModal(modal);
+
+return;
+}
       if (interaction.customId === 'ticket_open') {
         const config = await ensureConfig(interaction.guild.id);
         const existing = await Ticket.findOne({ guildId: interaction.guild.id, userId: interaction.user.id, status: 'open' });
@@ -1015,7 +1044,43 @@ client.on('interactionCreate', async (interaction) => {
         return;
       }
     }
+if (interaction.isModalSubmit()) {
 
+if (interaction.customId === 'modal_pedido') {
+
+const obra = interaction.fields.getTextInputValue('nome_obra');
+
+const pedidosChannel = interaction.guild.channels.cache.get(pedidosChannelId);
+
+if (!pedidosChannel) {
+return interaction.reply({
+content: 'Canal de pedidos não encontrado.',
+ephemeral: true
+});
+}
+
+const embed = new EmbedBuilder()
+.setColor('#8b5cf6')
+.setTitle('✦ Novo Pedido de Obra')
+.setDescription(
+`☾ Pedido enviado por ${interaction.user}\n\n` +
+`✦ Obra solicitada:\n` +
+`>>> ${obra}`
+)
+.setTimestamp();
+
+await pedidosChannel.send({
+embeds: [embed]
+});
+
+await interaction.reply({
+content: 'Pedido enviado com sucesso.',
+ephemeral: true
+});
+
+return;
+}
+}
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.commandName;
@@ -1610,7 +1675,56 @@ if (command === 'skip') {
       await interaction.reply({ content: 'Painel de ticket enviado.', ephemeral: true });
       return;
     }
+    
+if (command === 'pedidos') {
 
+const channel = interaction.guild.channels.cache.get(pedidosChannelId);
+
+if (!channel) {
+  return interaction.reply({
+    content: 'Canal de pedidos não encontrado.',
+    ephemeral: true
+  });
+}
+
+const embed = new EmbedBuilder()
+.setColor('#111111')
+.setTitle('☾ Pedidos de Obras • Noctra Core')
+.setDescription(
+`✦ Aqui você pode enviar pedidos de obras Yuri/Yaoi para adicionarmos futuramente ao site.\n\n` +
+
+`❖ Antes de enviar, verifique se outra pessoa já não fez o mesmo pedido.\n\n` +
+
+`✦ Caso a obra já tenha sido solicitada, apenas aguarde até que ela seja adicionada ao site.\n\n` +
+
+`☾ Nossa equipe analisa todos os pedidos enviados.\n\n` +
+
+`────────────────────\n` +
+`Noctra Core • Sistema de Pedidos`
+)
+.setFooter({
+  text: 'Noctra Core'
+});
+
+const row = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId('abrir_pedido')
+.setLabel('Enviar pedido')
+.setStyle(ButtonStyle.Primary)
+);
+
+await channel.send({
+embeds: [embed],
+components: [row]
+});
+
+await interaction.reply({
+content: 'Painel de pedidos enviado.',
+ephemeral: true
+});
+
+return;
+}
     if (command === 'roles') {
       const channel = interaction.options.getChannel('canal');
       const roles = ['cargo1', 'cargo2', 'cargo3']
