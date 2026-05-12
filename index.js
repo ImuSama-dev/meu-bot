@@ -672,7 +672,13 @@ new SlashCommandBuilder()
         { name: 'regras', value: 'rulesChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
-      .addChannelOption(o => o.setName('canal').setDescription('Canal ou categoria.').setRequired(true)))
+.addChannelOption(o =>
+  o
+    .setName('canal')
+    .setDescription('Canal ou categoria.')
+    .addChannelTypes(ChannelType.GuildCategory)
+    .setRequired(true)
+)
     .addSubcommand(s => s.setName('cargo')
       .setDescription('Define cargos.')
       .addStringOption(o => o.setName('tipo').setDescription('Tipo.').setRequired(true).addChoices(
