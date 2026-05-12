@@ -414,17 +414,6 @@ console.log("NOVO ANÚNCIO:", itemId);
 
   console.log("ENVIANDO EMBED NO CANAL:", channel.id);
 
-const row = new ActionRowBuilder().addComponents(
-  new ButtonBuilder()
-    .setCustomId('abrir_candidatura')
-    .setLabel('Quero me candidatar')
-    .setStyle(ButtonStyle.Success)
-);
-
-await channel.send({
-  embeds: [embed],
-  components: [row]
-});
   await Announcement.create({
     guildId: guild.id,
     type: 'chapter',
@@ -1350,10 +1339,18 @@ if (!canalAvisos) {
   });
 }
 
-await canalAvisos.send({
-  embeds: [embed]
-});
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('abrir_candidatura')
+    .setLabel('Quero me candidatar')
+    .setStyle(ButtonStyle.Success)
+);
 
+await canalAvisos.send({
+  embeds: [embed],
+  components: [row]
+});
+  
 await interaction.reply({
   content: `Aviso enviado em ${canalAvisos}.`,
   ephemeral: true
