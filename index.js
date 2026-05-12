@@ -678,7 +678,7 @@ new SlashCommandBuilder()
     .setDescription('Canal ou categoria.')
     .addChannelTypes(ChannelType.GuildCategory)
     .setRequired(true)
-)
+))
     .addSubcommand(s => s.setName('cargo')
       .setDescription('Define cargos.')
       .addStringOption(o => o.setName('tipo').setDescription('Tipo.').setRequired(true).addChoices(
