@@ -659,13 +659,6 @@ client.once('clientReady', async () => {
 for (const guild of client.guilds.cache.values()) {
   await ensureConfig(guild.id);
 }
-
-setInterval(() => {
-  for (const guild of client.guilds.cache.values()) {
-    checkNewChapterUpdates(guild).catch(err => console.log('Erro nas atualizacoes do site:', err));
-  }
-}, 2 * 60 * 1000);
-
   const rest = new REST({ version: '10' }).setToken(token);
 
   try {
