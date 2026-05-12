@@ -258,7 +258,7 @@ async function ensureConfig(serverId) {
   const config = await GuildConfig.findOneAndUpdate(
     { guildId: serverId },
     { $setOnInsert: { guildId: serverId, ...DEFAULT_CONFIG } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   const raw = config.toObject();
@@ -442,7 +442,7 @@ async function getWallet(serverId, userId) {
   return Economy.findOneAndUpdate(
     { guildId: serverId, userId },
     { $setOnInsert: { guildId: serverId, userId, coins: 0 } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 }
 
@@ -450,7 +450,7 @@ async function addCoins(serverId, userId, amount) {
   return Economy.findOneAndUpdate(
     { guildId: serverId, userId },
     { $inc: { coins: amount }, $setOnInsert: { guildId: serverId, userId } },
-    { upsert: true, new: true }
+{ upsert: true, returnDocument: 'after' }
   );
 }
 
@@ -653,7 +653,7 @@ new SlashCommandBuilder()
 ].map(command => command.toJSON());
 
 // ================= READY =================
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`${client.user.tag} online!`);
 
 for (const guild of client.guilds.cache.values()) {
@@ -1070,7 +1070,7 @@ client.on('interactionCreate', async (interaction) => {
       const warn = await Warning.findOneAndUpdate(
         { _id: id, guildId: interaction.guild.id },
         { active: false },
-        { new: true }
+       { returnDocument: 'after' }
       ).catch(() => null);
 
       if (!warn) return interaction.reply({ content: 'Warn nao encontrado.', ephemeral: true });
