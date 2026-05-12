@@ -63,6 +63,7 @@ const mongoUrl = process.env.MONGO_URL;
 const clientId = process.env.CLIENT_ID || '1499822762590736586';
 const guildId = process.env.GUILD_ID || '1334696250070663231';
 const pedidosChannelId = '1503133804477419530';
+const recrutamentoChannelId = '1502761123852849212';
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -413,8 +414,17 @@ console.log("NOVO ANÚNCIO:", itemId);
 
   console.log("ENVIANDO EMBED NO CANAL:", channel.id);
 
-await channel.send({ embeds: [embed] });
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('abrir_candidatura')
+    .setLabel('Quero me candidatar')
+    .setStyle(ButtonStyle.Success)
+);
 
+await channel.send({
+  embeds: [embed],
+  components: [row]
+});
   await Announcement.create({
     guildId: guild.id,
     type: 'chapter',
@@ -979,6 +989,25 @@ client.on('interactionCreate', async (interaction) => {
 
     if (interaction.isButton()) {
       if (interaction.customId === 'abrir_pedido') {
+        if (interaction.customId === 'abrir_candidatura') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_candidatura')
+    .setTitle('Candidatura Noctra');
+
+  const textoInput = new TextInputBuilder()
+    .setCustomId('texto_candidatura')
+    .setLabel('Mensagem opcional')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false)
+    .setPlaceholder('Ex: Quero ajudar como tradutora, editora ou cleaner.');
+
+  const row = new ActionRowBuilder().addComponents(textoInput);
+
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+  return;
+}
 
 const modal = new ModalBuilder()
 .setCustomId('modal_pedido')
@@ -1065,6 +1094,32 @@ return;
       }
     }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_candidatura') {
+  const texto = interaction.fields.getTextInputValue('texto_candidatura')?.trim();
+
+  const canal = interaction.guild.channels.cache.get(recrutamentoChannelId) || interaction.channel;
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle('✦ Nova candidatura')
+    .setDescription(
+      texto
+        ? `${interaction.user} se candidatou.\n\n**Mensagem:**\n${texto}`
+        : `${interaction.user} se candidatou.`
+    )
+    .setTimestamp();
+
+  await canal.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Sua candidatura foi enviada com sucesso.',
+    flags: 64
+  });
+
+  return;
+}
 
 if (interaction.customId === 'modal_pedido') {
 
