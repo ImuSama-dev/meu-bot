@@ -1,22 +1,6 @@
 require('dotenv').config();
 
-const {
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  NoSubscriberBehavior,
-  entersState,
-  VoiceConnectionStatus,
-  StreamType,
-  getVoiceConnection
-} = require('@discordjs/voice');
-
-const https = require('https');
 process.env.FFMPEG_PATH = require('ffmpeg-static');
-const ytdl = require('@distube/ytdl-core');
-const ytSearch = require('yt-search');
-const ffmpeg = require('ffmpeg-static');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -33,20 +17,41 @@ const {
 } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
-const admin = require('firebase-admin');
-let serviceAccount;
+let voiceTools;
+let playDl;
+let firestore;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-} else {
-  serviceAccount = require('./firebase-service-account.json');
+function getVoiceTools() {
+  if (!voiceTools) voiceTools = require('@discordjs/voice');
+  return voiceTools;
 }
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+function getPlayDl() {
+  if (!playDl) playDl = require('play-dl');
+  return playDl;
+}
 
-const firestore = admin.firestore();
+function getFirestore() {
+  if (firestore) return firestore;
+
+  const admin = require('firebase-admin');
+  let serviceAccount;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    serviceAccount = require('./firebase-service-account.json');
+  }
+
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  }
+
+  firestore = admin.firestore();
+  return firestore;
+}
 
 
 // ================= ENV =================
@@ -59,6 +64,40 @@ if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
   process.exit(1);
 }
+
+function logRuntimeStatus(label) {
+  const memory = process.memoryUsage();
+  const mb = value => Math.round(value / 1024 / 1024);
+
+  console.log(
+    `${label} | uptime=${Math.round(process.uptime())}s ` +
+    `rss=${mb(memory.rss)}MB heap=${mb(memory.heapUsed)}/${mb(memory.heapTotal)}MB`
+  );
+}
+
+async function shutdown(signal) {
+  logRuntimeStatus(`PROCESSO RECEBEU ${signal}`);
+
+  try {
+    client.destroy();
+    await mongoose.connection.close(false);
+  } catch (error) {
+    console.log('ERRO AO FINALIZAR BOT:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', error => {
+  console.log('UNHANDLED REJECTION:', error);
+  logRuntimeStatus('STATUS APOS UNHANDLED REJECTION');
+});
+process.on('uncaughtException', error => {
+  console.log('UNCAUGHT EXCEPTION:', error);
+  logRuntimeStatus('STATUS APOS UNCAUGHT EXCEPTION');
+});
 
 // ================= CONFIG PADRAO =================
 const DEFAULT_CONFIG = {
@@ -278,7 +317,7 @@ async function checkNewChapterUpdates(guild) {
   const channel = guild.channels.cache.get(config.updatesChannelId);
   if (!channel || !channel.isTextBased()) return;
 
-  const snapshot = await firestore
+  const snapshot = await getFirestore()
   .collectionGroup('chapters')
   .limit(10)
   .get()
@@ -655,19 +694,23 @@ new SlashCommandBuilder()
 // ================= READY =================
 client.once('clientReady', async () => {
   console.log(`${client.user.tag} online!`);
+  logRuntimeStatus('BOT ONLINE');
 
 for (const guild of client.guilds.cache.values()) {
   await ensureConfig(guild.id);
 }
+
   const rest = new REST({ version: '10' }).setToken(token);
 
   try {
     if (guildId) {
       await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
       console.log('Comandos registrados no servidor.');
+      logRuntimeStatus('APOS REGISTRAR COMANDOS');
     } else {
       await rest.put(Routes.applicationCommands(clientId), { body: commands });
       console.log('Comandos globais registrados.');
+      logRuntimeStatus('APOS REGISTRAR COMANDOS');
     }
   } catch (err) {
     console.log('Erro ao registrar comandos:', err);
@@ -1184,10 +1227,32 @@ await interaction.reply({
       return;
 }
     
-function getHttpStream(url) {
-  return new Promise((resolve, reject) => {
-    https.get(url, res => resolve(res)).on('error', reject);
+async function findYoutubeVideo(query) {
+  const play = getPlayDl();
+
+  if (play.yt_validate(query) === 'video') {
+    const info = await play.video_basic_info(query);
+
+    return {
+      title: info.video_details.title || 'Link do YouTube',
+      url: query,
+      thumbnail: info.video_details.thumbnails?.[0]?.url || null
+    };
+  }
+
+  const results = await play.search(query, {
+    limit: 1,
+    source: { youtube: 'video' }
   });
+  const video = results[0];
+
+  if (!video) return null;
+
+  return {
+    title: video.title,
+    url: video.url,
+    thumbnail: video.thumbnails?.[0]?.url || video.thumbnail || null
+  };
 }
     
 if (command === 'play') {
@@ -1206,6 +1271,16 @@ if (command === 'play') {
   }
 
   try {
+    const {
+      joinVoiceChannel,
+      createAudioPlayer,
+      createAudioResource,
+      AudioPlayerStatus,
+      NoSubscriberBehavior,
+      entersState,
+      VoiceConnectionStatus,
+      getVoiceConnection
+    } = getVoiceTools();
 
     let oldConnection = getVoiceConnection(interaction.guild.id);
     if (oldConnection) oldConnection.destroy();
@@ -1247,25 +1322,24 @@ if (command === 'play') {
       console.log('PLAYER ERRO:', error);
     });
 
-    const search = await ytSearch(query);
+    const video = await findYoutubeVideo(query);
 
-    if (!search.videos.length) {
+    if (!video) {
       connection.destroy();
       return interaction.editReply('Nenhuma música encontrada.');
     }
 
-const video = {
-  title: 'Teste MP3 direto',
-  thumbnail: null
-};
+const audio = await getPlayDl().stream(video.url);
 
-const stream = await getHttpStream('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-
-const resource = createAudioResource(stream, {
-  inputType: StreamType.Arbitrary,
+const resource = createAudioResource(audio.stream, {
+  inputType: audio.type,
   inlineVolume: true
 });
 
+audio.stream.on('error', error => {
+  console.log('STREAM ERRO:', error);
+  player.stop();
+});
 
 resource.volume.setVolume(1);
 
@@ -1324,6 +1398,7 @@ player.on('error', (error) => {
 
   } catch (err) {
     console.log('ERRO PLAY:', err);
+    console.log('ERRO PLAY STACK:', err?.stack || err);
 
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
