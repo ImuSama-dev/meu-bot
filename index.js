@@ -235,12 +235,23 @@ const ticketSchema = new mongoose.Schema({
   closedAt: Date,
   transcript: String
 }, { timestamps: true });
+const pedidoSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  userId: { type: String, required: true },
+  obraOriginal: { type: String, required: true },
+  obraNormalizada: { type: String, required: true }
+}, { timestamps: true });
 
+pedidoSchema.index(
+  { guildId: 1, obraNormalizada: 1 },
+  { unique: true }
+);
 const GuildConfig = mongoose.model('GuildConfig', guildConfigSchema);
 const XP = mongoose.model('XP', xpSchema);
 const Warning = mongoose.model('Warning', warningSchema);
 const Economy = mongoose.model('Economy', economySchema);
 const Ticket = mongoose.model('Ticket', ticketSchema);
+const Pedido = mongoose.model('Pedido', pedidoSchema);
 const announcementSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   type: { type: String, required: true },
@@ -288,6 +299,15 @@ const gifsSaida = [
   'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExODd4ODAzdTlsZnd6aGQ2MnV5N3kwZ202cnBpNnBvNjZrbDN0dzBrZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SznCZeibJJiOK6QbhT/giphy.gif'
 ];
 
+
+function normalizarTituloPedido(texto) {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
 function pick(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
@@ -1049,6 +1069,28 @@ if (interaction.isModalSubmit()) {
 if (interaction.customId === 'modal_pedido') {
 
 const obra = interaction.fields.getTextInputValue('nome_obra');
+  const obraNormalizada = normalizarTituloPedido(obra);
+
+const pedidoExistente = await Pedido.findOne({
+  guildId: interaction.guild.id,
+  obraNormalizada
+});
+
+if (pedidoExistente) {
+  return interaction.reply({
+    content:
+      `☾ Essa obra já foi enviada anteriormente.\n\n` +
+      `✦ Pedido existente: **${pedidoExistente.obraOriginal}**`,
+    ephemeral: true
+  });
+}
+
+await Pedido.create({
+  guildId: interaction.guild.id,
+  userId: interaction.user.id,
+  obraOriginal: obra,
+  obraNormalizada
+});
 
 const pedidosChannel = interaction.guild.channels.cache.get(pedidosChannelId);
 
