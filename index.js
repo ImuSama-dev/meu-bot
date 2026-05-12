@@ -976,9 +976,7 @@ client.on('interactionCreate', async (interaction) => {
       return interaction.reply({ content: 'Cargos atualizados.', ephemeral: true });
     }
 
-    if (interaction.isButton()) {
-      if (interaction.customId === 'abrir_pedido') {
-        if (interaction.customId === 'abrir_candidatura') {
+if (interaction.customId === 'abrir_candidatura') {
   const modal = new ModalBuilder()
     .setCustomId('modal_candidatura')
     .setTitle('Candidatura Noctra');
@@ -991,6 +989,26 @@ client.on('interactionCreate', async (interaction) => {
     .setPlaceholder('Ex: Quero ajudar como tradutora, editora ou cleaner.');
 
   const row = new ActionRowBuilder().addComponents(textoInput);
+
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+  return;
+}
+
+if (interaction.customId === 'abrir_pedido') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_pedido')
+    .setTitle('Enviar pedido');
+
+  const obraInput = new TextInputBuilder()
+    .setCustomId('nome_obra')
+    .setLabel('Digite o nome da obra')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: Painter Of The Night');
+
+  const row = new ActionRowBuilder().addComponents(obraInput);
 
   modal.addComponents(row);
 
@@ -1395,8 +1413,16 @@ if (!canalAvisos) {
   });
 }
 
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('abrir_candidatura')
+    .setLabel('Quero me candidatar')
+    .setStyle(ButtonStyle.Success)
+);
+
 await canalAvisos.send({
-  embeds: [embed]
+  embeds: [embed],
+  components: [row]
 });
 
 await interaction.reply({
