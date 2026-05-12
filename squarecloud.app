@@ -1,7 +1,6 @@
+NAME=meu-bot
+TYPE=bot
 MAIN=index.js
-MEMORY=512
-VERSION=recommended
-DISPLAY_NAME=Mimi
-DESCRIPTION=Bot Discord Noctra Core
+RAM=1024
+VERSION=20
 START=npm start
-AUTORESTART=true
