@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+process.env.FFMPEG_PATH = require('ffmpeg-static');
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -16,6 +17,42 @@ const {
 } = require('discord.js');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
+let voiceTools;
+let playDl;
+let firestore;
+
+function getVoiceTools() {
+  if (!voiceTools) voiceTools = require('@discordjs/voice');
+  return voiceTools;
+}
+
+function getPlayDl() {
+  if (!playDl) playDl = require('play-dl');
+  return playDl;
+}
+
+function getFirestore() {
+  if (firestore) return firestore;
+
+  const admin = require('firebase-admin');
+  let serviceAccount;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    serviceAccount = require('./firebase-service-account.json');
+  }
+
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  }
+
+  firestore = admin.firestore();
+  return firestore;
+}
+
 
 // ================= ENV =================
 const token = process.env.TOKEN;
@@ -27,6 +64,40 @@ if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
   process.exit(1);
 }
+
+function logRuntimeStatus(label) {
+  const memory = process.memoryUsage();
+  const mb = value => Math.round(value / 1024 / 1024);
+
+  console.log(
+    `${label} | uptime=${Math.round(process.uptime())}s ` +
+    `rss=${mb(memory.rss)}MB heap=${mb(memory.heapUsed)}/${mb(memory.heapTotal)}MB`
+  );
+}
+
+async function shutdown(signal) {
+  logRuntimeStatus(`PROCESSO RECEBEU ${signal}`);
+
+  try {
+    client.destroy();
+    await mongoose.connection.close(false);
+  } catch (error) {
+    console.log('ERRO AO FINALIZAR BOT:', error);
+  } finally {
+    process.exit(0);
+  }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', error => {
+  console.log('UNHANDLED REJECTION:', error);
+  logRuntimeStatus('STATUS APOS UNHANDLED REJECTION');
+});
+process.on('uncaughtException', error => {
+  console.log('UNCAUGHT EXCEPTION:', error);
+  logRuntimeStatus('STATUS APOS UNCAUGHT EXCEPTION');
+});
 
 // ================= CONFIG PADRAO =================
 const DEFAULT_CONFIG = {
@@ -44,10 +115,14 @@ const DEFAULT_CONFIG = {
     10: process.env.LEVEL_ROLE_10 || '1500290952018001981',
     20: process.env.LEVEL_ROLE_20 || '1500291699518341330'
   },
+
+    updatesChannelId: process.env.UPDATES_CHANNEL_ID || '1502442679622041630',
+  announcementsChannelId: process.env.ANNOUNCEMENTS_CHANNEL_ID || '1502773491492196572',
+siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/index.html',
   xpBlockedChannels: [],
   automod: {
     enabled: true,
-    capsMinLength: 10,
+    capsMinLength: 100,
     maxLength: 400,
     spamLimit: 6,
     spamWindowMs: 5000,
@@ -68,12 +143,22 @@ const DEFAULT_CONFIG = {
 };
 
 // ================= MONGODB =================
-mongoose.connect(mongoUrl)
-  .then(() => console.log('MongoDB conectado'))
-  .catch(err => {
-    console.log('ERRO MONGO:', err);
+async function startBot() {
+  try {
+    await mongoose.connect(mongoUrl, {
+      serverSelectionTimeoutMS: 30000
+    });
+
+    console.log('MongoDB conectado');
+    console.log('Iniciando login no Discord...');
+    await client.login(token);
+    console.log('Login enviado ao Discord.');
+  } catch (err) {
+    console.log('ERRO AO INICIAR BOT:', err);
     process.exit(1);
-  });
+  }
+}
+
 
 const guildConfigSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true },
@@ -82,6 +167,9 @@ const guildConfigSchema = new mongoose.Schema({
   logChannelId: String,
   rulesChannelId: String,
   rulesEmoji: String,
+  updatesChannelId: String,
+  announcementsChannelId: String,
+  siteUrl: String,
   visitorRoleId: String,
   memberRoleId: String,
   staffRoleId: String,
@@ -90,7 +178,7 @@ const guildConfigSchema = new mongoose.Schema({
   xpBlockedChannels: { type: [String], default: [] },
   automod: {
     enabled: { type: Boolean, default: true },
-    capsMinLength: { type: Number, default: 10 },
+    capsMinLength: { type: Number, default: 100 },
     maxLength: { type: Number, default: 400 },
     spamLimit: { type: Number, default: 6 },
     spamWindowMs: { type: Number, default: 5000 },
@@ -149,6 +237,15 @@ const XP = mongoose.model('XP', xpSchema);
 const Warning = mongoose.model('Warning', warningSchema);
 const Economy = mongoose.model('Economy', economySchema);
 const Ticket = mongoose.model('Ticket', ticketSchema);
+const announcementSchema = new mongoose.Schema({
+  guildId: { type: String, required: true },
+  type: { type: String, required: true },
+  itemId: { type: String, required: true }
+}, { timestamps: true });
+
+announcementSchema.index({ guildId: 1, type: 1, itemId: 1 }, { unique: true });
+
+const Announcement = mongoose.model('Announcement', announcementSchema);
 
 // ================= CLIENT =================
 const client = new Client({
@@ -158,7 +255,8 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildModeration
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildVoiceStates
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
@@ -166,6 +264,7 @@ const client = new Client({
 const xpCooldown = new Map();
 const spamMap = new Map();
 const raidMap = new Map();
+const musicPlayers = new Map();
 
 // ================= GIFS =================
 const gifsEntrada = [
@@ -200,7 +299,7 @@ async function ensureConfig(serverId) {
   const config = await GuildConfig.findOneAndUpdate(
     { guildId: serverId },
     { $setOnInsert: { guildId: serverId, ...DEFAULT_CONFIG } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   const raw = config.toObject();
@@ -212,6 +311,91 @@ async function ensureConfig(serverId) {
     antiRaid: { ...DEFAULT_CONFIG.antiRaid, ...(raw.antiRaid || {}) },
     economy: { ...DEFAULT_CONFIG.economy, ...(raw.economy || {}) }
   };
+}
+async function checkNewChapterUpdates(guild) {
+  const config = await ensureConfig(guild.id);
+  if (!config.updatesChannelId) return;
+
+  const channel = guild.channels.cache.get(config.updatesChannelId);
+  if (!channel || !channel.isTextBased()) return;
+
+  const snapshot = await getFirestore()
+  .collectionGroup('chapters')
+  .limit(10)
+  .get()
+    .catch(err => {
+      console.log('Erro ao buscar capitulos no Firebase:', err);
+      return null;
+    });
+
+if (!snapshot || snapshot.empty) return;
+
+const docsOrdenados = snapshot.docs.sort((a, b) => {
+  const dataA = a.data().updatedAt?.toMillis ? a.data().updatedAt.toMillis() : 0;
+  const dataB = b.data().updatedAt?.toMillis ? b.data().updatedAt.toMillis() : 0;
+  return dataB - dataA;
+});
+
+const chapterDoc = docsOrdenados[0];
+const chapter = chapterDoc.data();
+
+const manhwaRef = chapterDoc.ref.parent.parent;
+if (!manhwaRef) return;
+
+const manhwaDoc = await manhwaRef.get();
+if (!manhwaDoc.exists) return;
+
+const manhwa = manhwaDoc.data();
+const manhwaId = manhwaDoc.id;
+const chapterId = chapterDoc.id;
+
+const updatedAt = chapter.updatedAt?.toDate
+  ? chapter.updatedAt.toDate().toISOString()
+  : String(chapter.updatedAt || Date.now());
+
+const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
+
+  const alreadySent = await Announcement.findOne({
+    guildId: guild.id,
+    type: 'chapter',
+    itemId
+  });
+
+  if (alreadySent) {
+  console.log("JÁ ENVIADO:", itemId);
+  return;
+}
+
+console.log("NOVO ANÚNCIO:", itemId);
+  const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaId;
+  const capituloTitulo = chapter.titulo || chapter.title || `Capitulo ${chapterId}`;
+  const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
+  const chapterUrl = config.siteUrl;
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('☾ Capítulo atualizado na Noctra')
+    .setDescription(
+      `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
+      `✦ **Obra:** ${obraTitulo}\n` +
+      `✦ **Capítulo:** ${capituloTitulo}\n\n` +
+      `As páginas foram atualizadas. Continue a leitura e acompanhe essa história diretamente pelo site.\n\n` +
+      `[Ler agora](${chapterUrl})`
+    )
+    .setFooter({ text: 'Noctra Core • Atualização automática' })
+    .setTimestamp();
+
+  if (capaUrl) embed.setImage(capaUrl);
+
+  console.log("ENVIANDO EMBED NO CANAL:", channel.id);
+
+await channel.send({ embeds: [embed] });
+
+  await Announcement.create({
+    guildId: guild.id,
+    type: 'chapter',
+    itemId
+  }).catch(() => {});
 }
 
 async function sendLog(guild, title, description, color = '#2b2d31') {
@@ -299,7 +483,7 @@ async function getWallet(serverId, userId) {
   return Economy.findOneAndUpdate(
     { guildId: serverId, userId },
     { $setOnInsert: { guildId: serverId, userId, coins: 0 } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 }
 
@@ -307,12 +491,12 @@ async function addCoins(serverId, userId, amount) {
   return Economy.findOneAndUpdate(
     { guildId: serverId, userId },
     { $inc: { coins: amount }, $setOnInsert: { guildId: serverId, userId } },
-    { upsert: true, new: true }
+{ upsert: true, returnDocument: 'after' }
   );
 }
 
 async function buildTranscript(channel) {
-  const messages = await channel.messages.fetch({ limit: 100 });
+  const messages = await channel.messages.fetch({ limit: 1000 });
   return messages
     .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
     .map(msg => `[${msg.createdAt.toISOString()}] ${msg.author.tag}: ${msg.content || '[sem texto]'}`)
@@ -324,6 +508,10 @@ const commands = [
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Verifica se o bot esta online.'),
+  
+  new SlashCommandBuilder()
+  .setName('avisos')
+  .setDescription('Envia a mensagem oficial de avisos'),
 
   new SlashCommandBuilder()
     .setName('clear')
@@ -388,7 +576,26 @@ const commands = [
   new SlashCommandBuilder()
     .setName('top')
     .setDescription('Mostra ranking de XP.'),
+  
+new SlashCommandBuilder()
+  .setName('recrutamento')
+  .setDescription('Envia a mensagem de recrutamento'),
+  new SlashCommandBuilder()
+  .setName('play')
+  .setDescription('Toca uma musica do YouTube')
+  .addStringOption(o =>
+    o.setName('musica')
+      .setDescription('Nome ou link da musica')
+      .setRequired(true)
+  ),
 
+new SlashCommandBuilder()
+  .setName('stop')
+  .setDescription('Para a musica'),
+
+new SlashCommandBuilder()
+  .setName('skip')
+  .setDescription('Pula a musica atual'),
   new SlashCommandBuilder()
     .setName('leveladmin')
     .setDescription('Administra XP e nivel.')
@@ -460,6 +667,8 @@ const commands = [
         { name: 'boas-vindas', value: 'welcomeChannelId' },
         { name: 'saida', value: 'exitChannelId' },
         { name: 'logs', value: 'logChannelId' },
+        { name: 'atualizações', value: 'updatesChannelId' },
+        { name: 'avisos', value: 'announcementsChannelId' },
         { name: 'regras', value: 'rulesChannelId' },
         { name: 'categoria-ticket', value: 'ticketCategoryId' }
       ))
@@ -485,21 +694,37 @@ const commands = [
 ].map(command => command.toJSON());
 
 // ================= READY =================
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`${client.user.tag} online!`);
+  logRuntimeStatus('BOT ONLINE');
 
-  for (const guild of client.guilds.cache.values()) {
-    await ensureConfig(guild.id);
-  }
+for (const guild of client.guilds.cache.values()) {
+  await ensureConfig(guild.id);
+}
+
+  const checkChapterUpdates = () => {
+    for (const guild of client.guilds.cache.values()) {
+      checkNewChapterUpdates(guild).catch(err => console.log('Erro nas atualizacoes do site:', err));
+    }
+  };
+
+  console.log('Checagem de capitulos agendada para iniciar em 2 minutos.');
+  setTimeout(() => {
+    checkChapterUpdates();
+    setInterval(checkChapterUpdates, 10 * 60 * 1000);
+  }, 2 * 60 * 1000);
 
   const rest = new REST({ version: '10' }).setToken(token);
+
   try {
     if (guildId) {
       await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
       console.log('Comandos registrados no servidor.');
+      logRuntimeStatus('APOS REGISTRAR COMANDOS');
     } else {
       await rest.put(Routes.applicationCommands(clientId), { body: commands });
       console.log('Comandos globais registrados.');
+      logRuntimeStatus('APOS REGISTRAR COMANDOS');
     }
   } catch (err) {
     console.log('Erro ao registrar comandos:', err);
@@ -608,6 +833,10 @@ client.on('messageCreate', async (msg) => {
   if (msg.channel.id === config.rulesChannelId) return;
 
   if (config.automod.enabled) {
+  const textoSemEspaco = msg.content.replace(/\s/g, '').toLowerCase();
+  const ehRisadaKKK = /^k+$/.test(textoSemEspaco);
+
+  if (!ehRisadaKKK) {
     const key = `${msg.guild.id}:${msg.author.id}`;
     const spamCount = countRecent(spamMap, key, config.automod.spamWindowMs);
 
@@ -620,7 +849,7 @@ client.on('messageCreate', async (msg) => {
       return;
     }
 
-    if (msg.content.length > config.automod.capsMinLength && msg.content === msg.content.toUpperCase()) {
+    if (msg.content.length > 100 && msg.content === msg.content.toUpperCase()) {
       await msg.delete().catch(() => {});
       await sendLog(msg.guild, 'Mensagem apagada', `${msg.author} enviou CAPS em ${msg.channel}.`, '#faa61a');
       return;
@@ -632,7 +861,7 @@ client.on('messageCreate', async (msg) => {
       return;
     }
   }
-
+}
   if (!config.xpBlockedChannels.includes(msg.channel.id)) {
     const levelUp = await addXP(msg.guild.id, msg.author.id, msg.member, config);
     if (levelUp) {
@@ -891,7 +1120,7 @@ client.on('interactionCreate', async (interaction) => {
       const warn = await Warning.findOneAndUpdate(
         { _id: id, guildId: interaction.guild.id },
         { active: false },
-        { new: true }
+       { returnDocument: 'after' }
       ).catch(() => null);
 
       if (!warn) return interaction.reply({ content: 'Warn nao encontrado.', ephemeral: true });
@@ -918,9 +1147,323 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ embeds: [embed] });
       return;
     }
+if (command === 'avisos') {
 
-    if (command === 'top') {
-      const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
+const embed = new EmbedBuilder()
+.setColor('#111111')
+.setTitle('☾ Avisos Oficiais • Noctra Core')
+.setDescription(
+`✦ Acompanhe este canal para receber comunicados importantes da Noctra Core.\n\n` +
+
+`❖ Caso o site fique offline, entre em manutenção ou apresente instabilidades, todas as informações serão enviadas aqui.\n\n` +
+
+`✦ Este canal também será utilizado para:\n` +
+`• manutenção do site\n` +
+`• ajustes no servidor\n` +
+`• problemas técnicos\n\n` +
+
+`☾ Permaneça atento aos avisos enviados pela staff.\n\n` +
+`────────────────────\n` +
+`Noctra Core • Entre na escuridão.`
+)
+.setFooter({
+  text: 'Noctra Core • Sistema Oficial'
+})
+.setTimestamp();
+
+const config = await ensureConfig(interaction.guild.id);
+
+const canalAvisos = interaction.guild.channels.cache.get('1502761123852849212');
+
+if (!canalAvisos) {
+  return interaction.reply({
+    content: 'Canal de avisos não configurado.',
+    ephemeral: true
+  });
+}
+
+await canalAvisos.send({
+  embeds: [embed]
+});
+
+await interaction.reply({
+  content: `Aviso enviado em ${canalAvisos}.`,
+  ephemeral: true
+});
+
+return;
+}
+    if (command === 'recrutamento') {
+
+const embed = new EmbedBuilder()
+.setColor('#8b5cf6')
+.setTitle('✦ Recrutamento • Noctra Core')
+.setDescription(
+`A Noctra Core está recrutando pessoas interessadas em participar da equipe de tradução.\n\n` +
+
+`✦ Procuramos pessoas:\n` +
+`• organizadas\n` +
+`• dedicadas\n` +
+`• interessadas em Yuri ou Yaoi\n\n` +
+
+`❖ As obras serão enviadas pela administração.\n` +
+`❖ Cada pessoa poderá escolher preferências antes de começar.\n\n` +
+
+`✦ O projeto busca qualidade, carinho e dedicação em cada capítulo traduzido.\n\n` +
+
+`────────────────────\n` +
+`Noctra Core • Recrutamento Oficial`
+)
+.setFooter({
+  text: 'Noctra Core • Staff Oficial'
+})
+.setTimestamp();
+
+const config = await ensureConfig(interaction.guild.id);
+
+const canalAvisos = interaction.guild.channels.cache.get('1502761123852849212');
+
+if (!canalAvisos) {
+  return interaction.reply({
+    content: 'Canal de avisos não configurado.',
+    ephemeral: true
+  });
+}
+
+await canalAvisos.send({
+  embeds: [embed]
+});
+
+await interaction.reply({
+  content: `Recrutamento enviado em ${canalAvisos}.`,
+  ephemeral: true
+});
+      return;
+}
+    
+async function findYoutubeVideo(query) {
+  const play = getPlayDl();
+
+  if (play.yt_validate(query) === 'video') {
+    const info = await play.video_basic_info(query);
+
+    return {
+      title: info.video_details.title || 'Link do YouTube',
+      url: query,
+      thumbnail: info.video_details.thumbnails?.[0]?.url || null
+    };
+  }
+
+  const results = await play.search(query, {
+    limit: 1,
+    source: { youtube: 'video' }
+  });
+  const video = results[0];
+
+  if (!video) return null;
+
+  return {
+    title: video.title,
+    url: video.url,
+    thumbnail: video.thumbnails?.[0]?.url || video.thumbnail || null
+  };
+}
+    
+if (command === 'play') {
+  await interaction.deferReply().catch(err => {
+    console.log('NAO CONSEGUI RESPONDER A INTERACTION:', err);
+    return null;
+  });
+
+  if (!interaction.deferred && !interaction.replied) return;
+
+  const query = interaction.options.getString('musica');
+  const voiceChannel = interaction.member.voice.channel;
+
+  if (!voiceChannel) {
+    return interaction.editReply('Entre em uma call primeiro.');
+  }
+
+  try {
+    const {
+      joinVoiceChannel,
+      createAudioPlayer,
+      createAudioResource,
+      AudioPlayerStatus,
+      NoSubscriberBehavior,
+      entersState,
+      VoiceConnectionStatus,
+      getVoiceConnection
+    } = getVoiceTools();
+
+    let oldConnection = getVoiceConnection(interaction.guild.id);
+    if (oldConnection) oldConnection.destroy();
+
+    const permissions = voiceChannel.permissionsFor(interaction.guild.members.me);
+    if (!permissions.has(PermissionFlagsBits.Connect) || !permissions.has(PermissionFlagsBits.Speak)) {
+      return interaction.editReply('Eu preciso de permissão para Conectar e Falar nesse canal de voz.');
+    }
+
+    const connection = joinVoiceChannel({
+      channelId: voiceChannel.id,
+      guildId: interaction.guild.id,
+      adapterCreator: interaction.guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false
+    });
+
+    connection.on('stateChange', (oldState, newState) => {
+      console.log(`VOICE: ${oldState.status} -> ${newState.status}`);
+    });
+
+    connection.on('error', error => {
+      console.log('VOICE ERRO:', error);
+    });
+
+    await entersState(connection, VoiceConnectionStatus.Ready, 60000).catch(error => {
+      console.log('VOICE NAO FICOU READY:', error);
+      connection.destroy();
+      throw new Error('Nao consegui conectar ao canal de voz. A hospedagem pode estar bloqueando a conexao de voz/UDP do Discord.');
+    });
+
+    const player = createAudioPlayer({
+      behaviors: {
+        noSubscriber: NoSubscriberBehavior.Play
+      }
+    });
+
+    player.on('stateChange', (oldState, newState) => {
+      console.log(`PLAYER: ${oldState.status} -> ${newState.status}`);
+    });
+
+    player.on('error', error => {
+      console.log('PLAYER ERRO:', error);
+    });
+
+    const video = await findYoutubeVideo(query);
+
+    if (!video) {
+      connection.destroy();
+      return interaction.editReply('Nenhuma música encontrada.');
+    }
+
+const audio = await getPlayDl().stream(video.url);
+
+const resource = createAudioResource(audio.stream, {
+  inputType: audio.type,
+  inlineVolume: true
+});
+
+audio.stream.on('error', error => {
+  console.log('STREAM ERRO:', error);
+  player.stop();
+});
+
+resource.volume.setVolume(1);
+
+const subscription = connection.subscribe(player);
+
+if (!subscription) {
+  console.log('ERRO: connection.subscribe(player) falhou.');
+  connection.destroy();
+  return interaction.editReply('Conectei na call, mas não consegui enviar áudio.');
+}
+
+player.play(resource);
+
+console.log('PLAYER STATUS AGORA:', player.state.status);
+
+
+    musicPlayers.set(interaction.guild.id, {
+      connection,
+      player
+    });
+
+    const embed = new EmbedBuilder()
+      .setColor('#111111')
+      .setTitle('☾ Tocando agora')
+      .setDescription(
+        `✦ **${video.title}**\n\n` +
+        `❖ Pedido por: ${interaction.user}\n` +
+        `☾ Canal: ${voiceChannel}`
+      )
+      .setThumbnail(video.thumbnail)
+      .setFooter({
+        text: 'Noctra Music'
+      });
+
+    await interaction.editReply({
+      embeds: [embed]
+    });
+
+player.on(AudioPlayerStatus.Idle, () => {
+  console.log('PLAYER: entrou em Idle. A música terminou, o stream caiu ou nenhum áudio chegou ao Discord.');
+
+  setTimeout(() => {
+    const current = musicPlayers.get(interaction.guild.id);
+
+    if (current?.player === player && player.state.status === AudioPlayerStatus.Idle) {
+      console.log('PLAYER: destruindo conexão após Idle.');
+      current.connection.destroy();
+      musicPlayers.delete(interaction.guild.id);
+    }
+  }, 120000);
+});
+
+player.on('error', (error) => {
+  console.log('PLAYER ERRO:', error);
+});
+
+  } catch (err) {
+    console.log('ERRO PLAY:', err);
+    console.log('ERRO PLAY STACK:', err?.stack || err);
+
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
+    }
+
+    return;
+  }
+
+  return;
+}
+
+if (command === 'stop') {
+  const musicData = musicPlayers.get(interaction.guild.id);
+
+  if (!musicData) {
+    return interaction.reply({
+      content: 'Não há música tocando.',
+      ephemeral: true
+    });
+  }
+
+  musicData.player.stop();
+  musicData.connection.destroy();
+
+  musicPlayers.delete(interaction.guild.id);
+
+  await interaction.reply('☾ Música parada.');
+  return;
+}
+
+if (command === 'skip') {
+  const musicData = musicPlayers.get(interaction.guild.id);
+
+  if (!musicData) {
+    return interaction.reply({
+      content: 'Não há música tocando.',
+      ephemeral: true
+    });
+  }
+
+  musicData.player.stop();
+
+  await interaction.reply('☾ Música pulada.');
+  return;
+}
+  if (command === 'top') {
+    const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
       let desc = '🏆 Top da Noctra\n\n';
 
       for (let i = 0; i < top.length; i++) {
@@ -1115,7 +1658,6 @@ client.on('interactionCreate', async (interaction) => {
         await GuildConfig.updateOne({ guildId: interaction.guild.id }, { $set: { [`levelRoles.${level}`]: role.id } });
         return interaction.reply({ content: `Nivel ${level} agora da o cargo ${role}.`, ephemeral: true });
       }
-
       const config = await GuildConfig.findOne({ guildId: interaction.guild.id });
       return interaction.reply({
         content: [
@@ -1137,6 +1679,19 @@ client.on('interactionCreate', async (interaction) => {
     else interaction.reply(payload).catch(() => {});
   }
 });
+// ================= SERVIDOR WEB RENDER =================
+const express = require('express');
+const app = express();
 
+app.get('/', (req, res) => {
+  res.send('Mimi online!');
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor web ativo na porta ${PORT}`);
+});
 // ================= ONLINE =================
-client.login(token);
+startBot();
+
