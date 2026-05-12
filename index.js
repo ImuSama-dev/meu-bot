@@ -109,7 +109,7 @@ const DEFAULT_CONFIG = {
   visitorRoleId: process.env.VISITOR_ROLE_ID || '1500224581145858090',
   memberRoleId: process.env.MEMBER_ROLE_ID || '1334697264668741662',
   staffRoleId: process.env.STAFF_ROLE_ID || null,
- ticketCategoryId: process.env.TICKET_CATEGORY_ID || '1502083203408855050',
+ ticketCategoryId: process.env.TICKET_CATEGORY_ID || '1502288315410550784',
   levelRoles: {
     5: process.env.LEVEL_ROLE_5 || '1500290223366733976',
     10: process.env.LEVEL_ROLE_10 || '1500290952018001981',
