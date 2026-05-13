@@ -1902,7 +1902,7 @@ return;
   } catch (error) {
     console.log('Erro em interactionCreate:', error);
     const payload = { content: 'Algo deu errado ao executar isso.', ephemeral: true };
-    replied || interaction.deferred) interaction.followUp(payload).catch(() => {});
+    if (interaction.replied || interaction.deferred) interaction.followUp(payload).catch(() => {});
     else interaction.reply(payload).catch(() => {});
   }
 });
@@ -1919,21 +1919,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor web ativo na porta ${PORT}`);
 });
-  } catch (err) {
-    console.log('ERRO INTERACTION:', err);
 
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({
-        content: 'Ocorreu um erro.'
-      }).catch(() => {});
-    } else {
-      await interaction.reply({
-        content: 'Ocorreu um erro.',
-        ephemeral: true
-      }).catch(() => {});
-    }
-  }
-});
 // ================= ONLINE =================
 startBot();
 
