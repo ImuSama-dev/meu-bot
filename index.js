@@ -1030,11 +1030,14 @@ if (interaction.customId === 'ticket_open') {
   );
 
   if (existing) {
-    return interaction.reply({
-      content: `Você já possui um ticket aberto: ${existing}`,
-      ephemeral: true
-    });
+return interaction.reply({
+  content: `Ticket criado: ${channel}`,
+  ephemeral: true
+});
   }
+}
+
+if (interaction.isModalSubmit()) {
 
   const channel = await interaction.guild.channels.create({
     name: `ticket-${interaction.user.username}`,
