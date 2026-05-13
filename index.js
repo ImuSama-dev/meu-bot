@@ -1524,7 +1524,7 @@ player.on('error', (error) => {
     console.log('ERRO PLAY:', err);
     console.log('ERRO PLAY STACK:', err?.stack || err);
 
-    deferred || interaction.replied) {
+    if (interaction.deferred || interaction.replied) {
       await interaction.editReply(`Erro ao tocar música: ${err.message}`).catch(() => {});
     }
 
