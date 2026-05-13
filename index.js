@@ -413,7 +413,9 @@ console.log("NOVO ANÚNCIO:", itemId);
   if (capaUrl) embed.setImage(capaUrl);
 
   console.log("ENVIANDO EMBED NO CANAL:", channel.id);
-
+  
+await channel.send({ embeds: [embed] });
+  
   await Announcement.create({
     guildId: guild.id,
     type: 'chapter',
@@ -703,7 +705,11 @@ new SlashCommandBuilder()
   o
     .setName('canal')
     .setDescription('Canal ou categoria.')
-    .addChannelTypes(ChannelType.GuildCategory)
+    .addChannelTypes(
+  ChannelType.GuildText,
+  ChannelType.GuildAnnouncement,
+  ChannelType.GuildCategory
+)
     .setRequired(true)
 ))
     .addSubcommand(s => s.setName('cargo')
@@ -976,120 +982,116 @@ client.on('interactionCreate', async (interaction) => {
       return interaction.reply({ content: 'Cargos atualizados.', ephemeral: true });
     }
 
-    if (interaction.isButton()) {
-      if (interaction.customId === 'abrir_candidatura') {
-        const modal = new ModalBuilder()
-          .setCustomId('modal_candidatura')
-          .setTitle('Candidatura Noctra');
+if (interaction.isButton()) {
+  if (interaction.customId === 'abrir_candidatura') {
+    const modal = new ModalBuilder()
+      .setCustomId('modal_candidatura')
+      .setTitle('Candidatura Noctra');
 
-        const textoInput = new TextInputBuilder()
-          .setCustomId('texto_candidatura')
-          .setLabel('Mensagem opcional')
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(false)
-          .setPlaceholder('Ex: Quero ajudar como tradutora, editora ou cleaner.');
+    const textoInput = new TextInputBuilder()
+      .setCustomId('texto_candidatura')
+      .setLabel('Mensagem opcional')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(false)
+      .setPlaceholder('Ex: Quero ajudar como tradutora, editora ou cleaner.');
 
-        const row = new ActionRowBuilder().addComponents(textoInput);
-        modal.addComponents(row);
+    const row = new ActionRowBuilder().addComponents(textoInput);
+    modal.addComponents(row);
 
-        await interaction.showModal(modal);
-        return;
-      }
+    await interaction.showModal(modal);
+    return;
+  }
 
-if (interaction.customId === 'abrir_pedido') {
-  const modal = new ModalBuilder()
-    .setCustomId('modal_pedido')
-    .setTitle('Enviar pedido');
+  if (interaction.customId === 'abrir_pedido') {
+    const modal = new ModalBuilder()
+      .setCustomId('modal_pedido')
+      .setTitle('Enviar pedido');
 
-  const obraInput = new TextInputBuilder()
-    .setCustomId('nome_obra')
-    .setLabel('Digite o nome da obra')
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setPlaceholder('Ex: Painter Of The Night');
+    const obraInput = new TextInputBuilder()
+      .setCustomId('nome_obra')
+      .setLabel('Digite o nome da obra')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true)
+      .setPlaceholder('Ex: Painter Of The Night');
 
-  const row = new ActionRowBuilder().addComponents(obraInput);
+    const row = new ActionRowBuilder().addComponents(obraInput);
+    modal.addComponents(row);
 
-  modal.addComponents(row);
+    await interaction.showModal(modal);
+    return;
+  }
 
-  await interaction.showModal(modal);
-  return;
-}
+  if (interaction.customId === 'ticket_open') {
+    const config = await ensureConfig(interaction.guild.id);
 
-if (interaction.customId === 'ticket_open') {
-  const config = await ensureConfig(interaction.guild.id);
+    const category = config.ticketCategoryId
+      ? interaction.guild.channels.cache.get(config.ticketCategoryId)
+      : null;
 
-  const category = config.ticketCategoryId
-    ? interaction.guild.channels.cache.get(config.ticketCategoryId)
-    : null;
+    const existing = interaction.guild.channels.cache.find(
+      c =>
+        c.topic === `ticket:${interaction.user.id}` &&
+        c.parentId === category?.id
+    );
 
-  const existing = interaction.guild.channels.cache.find(
-    c =>
-      c.topic === `ticket:${interaction.user.id}` &&
-      c.parentId === category?.id
-  );
+    if (existing) {
+      return interaction.reply({
+        content: `Você já possui um ticket aberto: ${existing}`,
+        ephemeral: true
+      });
+    }
 
-  if (existing) {
-return interaction.reply({
-  content: `Ticket criado: ${channel}`,
-  ephemeral: true
-});
+    const channel = await interaction.guild.channels.create({
+      name: `ticket-${interaction.user.username}`,
+      type: ChannelType.GuildText,
+      parent: category?.id,
+      topic: `ticket:${interaction.user.id}`,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.roles.everyone.id,
+          deny: ['ViewChannel']
+        },
+        {
+          id: interaction.user.id,
+          allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+        },
+        {
+          id: interaction.guild.members.me.id,
+          allow: ['ViewChannel', 'SendMessages', 'ManageChannels']
+        }
+      ]
+    });
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('ticket_close')
+        .setLabel('Fechar ticket')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    await channel.send({
+      content: `${interaction.user}`,
+      embeds: [
+        new EmbedBuilder()
+          .setColor('#111111')
+          .setTitle('☾ Ticket aberto')
+          .setDescription('A staff responderá em breve.')
+      ],
+      components: [row]
+    });
+
+    await Ticket.create({
+      guildId: interaction.guild.id,
+      channelId: channel.id,
+      userId: interaction.user.id
+    });
+
+    return interaction.reply({
+      content: `Ticket criado: ${channel}`,
+      ephemeral: true
+    });
   }
 }
-
-if (interaction.isModalSubmit()) {
-
-  const channel = await interaction.guild.channels.create({
-    name: `ticket-${interaction.user.username}`,
-    type: ChannelType.GuildText,
-    parent: category?.id,
-    topic: `ticket:${interaction.user.id}`,
-    permissionOverwrites: [
-      {
-        id: interaction.guild.roles.everyone.id,
-        deny: ['ViewChannel']
-      },
-      {
-        id: interaction.user.id,
-        allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
-      },
-      {
-        id: interaction.guild.members.me.id,
-        allow: ['ViewChannel', 'SendMessages', 'ManageChannels']
-      }
-    ]
-  });
-
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('ticket_close')
-      .setLabel('Fechar ticket')
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  await channel.send({
-    content: `${interaction.user}`,
-    embeds: [
-      new EmbedBuilder()
-        .setColor('#111111')
-        .setTitle('☾ Ticket aberto')
-        .setDescription('A staff responderá em breve.')
-    ],
-    components: [row]
-  });
-
-  await Ticket.create({
-    guildId: interaction.guild.id,
-    channelId: channel.id,
-    userId: interaction.user.id
-  });
-
-  return interaction.reply({
-    content: `Ticket criado: ${channel}`,
-    ephemeral: true
-  });
-  }
-      
 if (interaction.isModalSubmit()) {
   if (interaction.customId === 'modal_candidatura') {
   const texto = interaction.fields.getTextInputValue('texto_candidatura')?.trim();
@@ -1909,6 +1911,7 @@ return;
     else interaction.reply(payload).catch(() => {});
   }
 });
+
 // ================= SERVIDOR WEB RENDER =================
 const express = require('express');
 const app = express();
@@ -1925,4 +1928,5 @@ app.listen(PORT, () => {
 
 // ================= ONLINE =================
 startBot();
+
 
