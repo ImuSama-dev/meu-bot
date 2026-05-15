@@ -378,14 +378,14 @@ gradient.addColorStop(1, '#020006');
       const capa = await loadImage(capaUrl);
 
       ctx.save();
-     roundRect(ctx, 80, 95, 470, 720, 35);
+     roundRect(ctx, 60, 90, 500, 760, 40);
       ctx.clip();
-      ctx.drawImage(capa, 80, 95, 470, 720);
+      ctx.drawImage(capa, 60, 90, 500, 760);
       ctx.restore();
 
       ctx.strokeStyle = 'rgba(236,72,153,0.95)';
       ctx.lineWidth = 5;
-     roundRect(ctx, 80, 95, 470, 720, 35);
+     roundRect(ctx, 60, 90, 500, 760, 40);
       ctx.stroke();
     } catch (err) {
       console.log('Erro ao carregar capa no banner:', err.message);
@@ -393,12 +393,12 @@ gradient.addColorStop(1, '#020006');
   }
 
   ctx.fillStyle = 'rgba(255,255,255,0.055)';
-  roundRect(ctx, 560, 360, 900, 320, 34);
+  roundRect(ctx, 600, 360, 820, 360, 40);
   ctx.fill();
 
   ctx.strokeStyle = 'rgba(236,72,153,0.35)';
   ctx.lineWidth = 2;
-  roundRect(ctx, 560, 360, 900, 320, 34);
+  roundRect(ctx, 600, 360, 820, 360, 40);
   ctx.stroke();
 
   ctx.textAlign = 'center';
@@ -422,19 +422,19 @@ gradient.addColorStop(1, '#020006');
 
   ctx.fillStyle = '#ff6bbd';
   ctx.font = 'bold 30px Arial';
-  ctx.fillText('OBRA', 625, 430);
+  ctx.fillText('OBRA', 780, 455);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 45px Georgia';
-  ctx.fillText(cortarTexto(ctx, obraTitulo, 720), 625, 492);
+  cctx.fillText(cortarTexto(ctx, obraTitulo, 580), 780, 535);
 
   ctx.fillStyle = '#ff6bbd';
   ctx.font = 'bold 30px Arial';
-  ctx.fillText('CAPÍTULO', 625, 565);
+ ctx.fillText('CAPÍTULO', 780, 620);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 45px Georgia';
-  ctx.fillText(cortarTexto(ctx, capituloTitulo, 720), 625, 625);
+ ctx.fillText(cortarTexto(ctx, capituloTitulo, 580), 780, 690);
 
   const btnGradient = ctx.createLinearGradient(610, 700, 1390, 790);
   btnGradient.addColorStop(0, '#4c0519');
@@ -442,22 +442,21 @@ gradient.addColorStop(1, '#020006');
   btnGradient.addColorStop(1, '#ec4899');
 
   ctx.fillStyle = btnGradient;
-  roundRect(ctx, 610, 725, 780, 110, 35);
+  roundRect(ctx, 650, 770, 700, 115, 42);
   ctx.fill();
 
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 2;
-  roundRect(ctx, 610, 725, 780, 110, 35);
+  roundRect(ctx, 650, 770, 700, 115, 42);
   ctx.stroke();
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 42px Georgia';
-  ctx.fillText('LER AGORA', 1000, 795);
+  ctx.fillText('LER AGORA', 1000, 845);
   ctx.fillStyle = '#ff8ac8';
   ctx.font = '26px Arial';
-  ctx.fillText('HISTÓRIAS QUE FLORESCEM NA ESCURIDÃO', 800, 840);
-
+  ctx.fillText('HISTÓRIAS QUE FLORESCEM NA ESCURIDÃO', 800, 960);
   return canvas.toBuffer('image/png');
 }
 
