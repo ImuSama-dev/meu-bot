@@ -344,15 +344,18 @@ async function checkNewChapterUpdates(guild) {
   const channel = guild.channels.cache.get(config.updatesChannelId);
   if (!channel || !channel.isTextBased()) return;
 
-  const snapshot = await getFirestore()
-  .collectionGroup('chapters')
+let snapshot = await getFirestore()
+  .collection('manhwas')
   .orderBy('updatedAt', 'desc')
-  .limit(10)
+  .limit(1)
   .get()
-    .catch(err => {
-      console.log('Erro ao buscar capitulos no Firebase:', err);
-      return null;
-    });
+  .catch(async () => {
+    return await getFirestore()
+      .collection('manhwas')
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+  });
 
 if (!snapshot || snapshot.empty) return;
 
@@ -393,9 +396,9 @@ const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
 }
 
 console.log("NOVO ANÚNCIO:", itemId);
-  const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaId;
-  const capituloTitulo = chapter.titulo || chapter.title || `Capitulo ${chapterId}`;
-  const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
+const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaDoc.id;
+const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
+const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
   const chapterUrl = config.siteUrl;
 
   const embed = new EmbedBuilder()
@@ -1683,8 +1686,6 @@ if (!snapshot || snapshot.empty) {
 
 const chapterDoc = snapshot.docs[0];
 const chapter = chapterDoc.data();
-
-const manhwaRef = chapterDoc.ref.parent.parent;
 
 if (!manhwaRef) {
   return interaction.reply({
