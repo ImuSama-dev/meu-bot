@@ -405,13 +405,13 @@ gradient.addColorStop(1, '#020006');
 
   ctx.fillStyle = '#ff8ac8';
   ctx.font = 'bold 38px Arial';
-  ctx.fillText('⭐NOCTRA CORE⭐', 1000, 150);
+  ctx.fillText('NOCTRA CORE', 1000, 150);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 82px Georgia';
   ctx.shadowColor = '#ff4fc3';
   ctx.shadowBlur = 30;
-  ctx.fillText('NOVA ATUALIZAÇÃO', 1000, 260);
+  ctx.fillText('NOVA ATUALIZAÇÃO', 980, 240);
   ctx.shadowBlur = 0;
 
   ctx.fillStyle = '#ffd6ea';
