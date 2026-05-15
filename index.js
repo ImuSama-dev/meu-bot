@@ -1655,98 +1655,63 @@ if (command === 'skip') {
   return;
 }
 if (command === 'atualizacao') {
+  const config = await ensureConfig(interaction.guild.id);
+  const channel = interaction.guild.channels.cache.get(config.updatesChannelId);
 
-const config = await ensureConfig(interaction.guild.id);
+  if (!channel || !channel.isTextBased()) {
+    return interaction.reply({
+      content: 'Canal de atualizações não encontrado.',
+      ephemeral: true
+    });
+  }
 
-const channel = interaction.guild.channels.cache.get(config.updatesChannelId);
+  const snapshot = await getFirestore()
+    .collection('manhwas')
+    .orderBy('updatedAt', 'desc')
+    .limit(1)
+    .get()
+    .catch(async () => {
+      return await getFirestore()
+        .collection('manhwas')
+        .limit(1)
+        .get();
+    });
 
-if (!channel) {
-  return interaction.reply({
-    content: 'Canal de atualizações não encontrado.',
+  if (!snapshot || snapshot.empty) {
+    return interaction.reply({
+      content: 'Nenhuma obra encontrada no Firebase.',
+      ephemeral: true
+    });
+  }
+
+  const manhwaDoc = snapshot.docs[0];
+  const manhwa = manhwaDoc.data();
+
+  const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaDoc.id;
+  const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
+  const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('☾ Atualização Manual • Noctra')
+    .setDescription(
+      `✦ **Obra:** ${obraTitulo}\n` +
+      `✦ **Capítulo:** ${capituloTitulo}\n\n` +
+      `[Ler agora](${config.siteUrl})`
+    )
+    .setFooter({ text: 'Noctra Core • Atualização manual' })
+    .setTimestamp();
+
+  if (capaUrl) embed.setImage(capaUrl);
+
+  await channel.send({ embeds: [embed] });
+
+  await interaction.reply({
+    content: 'Atualização enviada manualmente.',
     ephemeral: true
   });
-}
 
-const snapshot = await getFirestore()
-  .collectionGroup('chapters')
-  .orderBy('updatedAt', 'desc')
-  .limit(1)
-  .get()
-  .catch(err => {
-    console.log(err);
-    return null;
-  });
-
-if (!snapshot || snapshot.empty) {
-  return interaction.reply({
-    content: 'Nenhum capítulo encontrado.',
-    ephemeral: true
-  });
-}
-
-const chapterDoc = snapshot.docs[0];
-const chapter = chapterDoc.data();
-
-if (!manhwaRef) {
-  return interaction.reply({
-    content: 'Erro ao localizar obra.',
-    ephemeral: true
-  });
-}
-
-const manhwaDoc = await manhwaRef.get();
-
-if (!manhwaDoc.exists) {
-  return interaction.reply({
-    content: 'Obra não encontrada.',
-    ephemeral: true
-  });
-}
-
-const manhwa = manhwaDoc.data();
-
-const obraTitulo =
-  manhwa.titulo ||
-  manhwa.title ||
-  manhwa.nome ||
-  manhwaDoc.id;
-
-const capituloTitulo =
-  chapter.titulo ||
-  chapter.title ||
-  `Capítulo ${chapterDoc.id}`;
-
-const capaUrl =
-  manhwa.capa ||
-  manhwa.cover ||
-  manhwa.image ||
-  null;
-
-const embed = new EmbedBuilder()
-  .setColor('#111111')
-  .setTitle('☾ Atualização Manual • Noctra')
-  .setDescription(
-    `✦ **Obra:** ${obraTitulo}\n` +
-    `✦ **Capítulo:** ${capituloTitulo}\n\n` +
-    `[Ler agora](${config.siteUrl})`
-  )
-  .setFooter({
-    text: 'Noctra Core • Atualização manual'
-  })
-  .setTimestamp();
-
-if (capaUrl) embed.setImage(capaUrl);
-
-await channel.send({
-  embeds: [embed]
-});
-
-await interaction.reply({
-  content: 'Atualização enviada manualmente.',
-  ephemeral: true
-});
-
-return;
+  return;
 }
     
   if (command === 'top') {
