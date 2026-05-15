@@ -426,7 +426,7 @@ gradient.addColorStop(1, '#020006');
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 45px Georgia';
-  cctx.fillText(cortarTexto(ctx, obraTitulo, 580), 780, 535);
+  ctx.fillText(cortarTexto(ctx, obraTitulo, 580), 780, 535);
 
   ctx.fillStyle = '#ff6bbd';
   ctx.font = 'bold 30px Arial';
