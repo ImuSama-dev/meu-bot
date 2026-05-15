@@ -405,7 +405,7 @@ gradient.addColorStop(1, '#020006');
 
   ctx.fillStyle = '#ff8ac8';
   ctx.font = 'bold 38px Arial';
-  ctx.fillText('☾ NOCTRA CORE ☾', 1000, 150);
+  ctx.fillText('✦ NOCTRA CORE ✦', 1000, 150);
 
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 82px Georgia';
