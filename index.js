@@ -2,6 +2,7 @@ require('dotenv').config();
 
 process.env.FFMPEG_PATH = require('ffmpeg-static');
 const {
+  AttachmentBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -18,6 +19,7 @@ const {
  TextInputStyle,
  Routes
 } = require('discord.js');
+const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
 let voiceTools;
@@ -337,6 +339,150 @@ async function ensureConfig(serverId) {
     economy: { ...DEFAULT_CONFIG.economy, ...(raw.economy || {}) }
   };
 }
+async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
+  const canvas = createCanvas(1600, 900);
+  const ctx = canvas.getContext('2d');
+
+  const gradient = ctx.createLinearGradient(0, 0, 1600, 900);
+  gradient.addColorStop(0, '#05000a');
+  gradient.addColorStop(0.45, '#160020');
+  gradient.addColorStop(1, '#05000a');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 1600, 900);
+
+  ctx.fillStyle = 'rgba(236,72,153,0.18)';
+  ctx.beginPath();
+  ctx.arc(1260, 150, 270, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(236,72,153,0.75)';
+  ctx.lineWidth = 4;
+  roundRect(ctx, 45, 45, 1510, 810, 35);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(168,85,247,0.35)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 80, 80, 1440, 740, 28);
+  ctx.stroke();
+
+  for (let i = 0; i < 90; i++) {
+    ctx.fillStyle = `rgba(255,170,220,${Math.random() * 0.7})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * 1600, Math.random() * 900, Math.random() * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  if (capaUrl) {
+    try {
+      const capa = await loadImage(capaUrl);
+
+      ctx.save();
+      roundRect(ctx, 95, 105, 415, 680, 30);
+      ctx.clip();
+      ctx.drawImage(capa, 95, 105, 415, 680);
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(236,72,153,0.95)';
+      ctx.lineWidth = 5;
+      roundRect(ctx, 95, 105, 415, 680, 30);
+      ctx.stroke();
+    } catch (err) {
+      console.log('Erro ao carregar capa no banner:', err.message);
+    }
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.055)';
+  roundRect(ctx, 570, 350, 870, 285, 28);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(236,72,153,0.35)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 570, 350, 870, 285, 28);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = '#ff8ac8';
+  ctx.font = 'bold 38px Arial';
+  ctx.fillText('☾ NOCTRA CORE ☾', 1000, 150);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 82px Georgia';
+  ctx.fillText('NOVA ATUALIZAÇÃO', 1000, 260);
+
+  ctx.fillStyle = '#ffd6ea';
+  ctx.font = '30px Arial';
+  ctx.fillText('UM NOVO CAPÍTULO ACABA DE SER LANÇADO', 1000, 320);
+
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#ff6bbd';
+  ctx.font = 'bold 30px Arial';
+  ctx.fillText('OBRA', 625, 430);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 45px Georgia';
+  ctx.fillText(cortarTexto(ctx, obraTitulo, 720), 625, 492);
+
+  ctx.fillStyle = '#ff6bbd';
+  ctx.font = 'bold 30px Arial';
+  ctx.fillText('CAPÍTULO', 625, 565);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 45px Georgia';
+  ctx.fillText(cortarTexto(ctx, capituloTitulo, 720), 625, 625);
+
+  const btnGradient = ctx.createLinearGradient(610, 700, 1390, 790);
+  btnGradient.addColorStop(0, '#4c0519');
+  btnGradient.addColorStop(0.5, '#a21caf');
+  btnGradient.addColorStop(1, '#ec4899');
+
+  ctx.fillStyle = btnGradient;
+  roundRect(ctx, 610, 700, 780, 95, 28);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 610, 700, 780, 95, 28);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 42px Georgia';
+  ctx.fillText('LER AGORA', 1000, 762);
+
+  ctx.fillStyle = '#ff8ac8';
+  ctx.font = '26px Arial';
+  ctx.fillText('HISTÓRIAS QUE FLORESCEM NA ESCURIDÃO', 800, 840);
+
+  return canvas.toBuffer('image/png');
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function cortarTexto(ctx, texto, larguraMaxima) {
+  if (!texto) return '';
+  if (ctx.measureText(texto).width <= larguraMaxima) return texto;
+
+  let cortado = texto;
+  while (ctx.measureText(cortado + '...').width > larguraMaxima) {
+    cortado = cortado.slice(0, -1);
+  }
+
+  return cortado + '...';
+}
 async function checkNewChapterUpdates(guild) {
   const config = await ensureConfig(guild.id);
   if (!config.updatesChannelId) return;
@@ -344,45 +490,34 @@ async function checkNewChapterUpdates(guild) {
   const channel = guild.channels.cache.get(config.updatesChannelId);
   if (!channel || !channel.isTextBased()) return;
 
-let snapshot = await getFirestore()
-  .collection('manhwas')
-  .orderBy('updatedAt', 'desc')
-  .limit(1)
-  .get()
-  .catch(async () => {
-    return await getFirestore()
-      .collection('manhwas')
-      .orderBy('createdAt', 'desc')
-      .limit(1)
-      .get();
-  });
+  const snapshot = await getFirestore()
+    .collection('manhwas')
+    .orderBy('updatedAt', 'desc')
+    .limit(1)
+    .get()
+    .catch(async () => {
+      return await getFirestore()
+        .collection('manhwas')
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
+    });
 
-if (!snapshot || snapshot.empty) return;
+  if (!snapshot || snapshot.empty) return;
 
-const docsOrdenados = snapshot.docs.sort((a, b) => {
-  const dataA = a.data().updatedAt?.toMillis ? a.data().updatedAt.toMillis() : 0;
-  const dataB = b.data().updatedAt?.toMillis ? b.data().updatedAt.toMillis() : 0;
-  return dataB - dataA;
-});
+  const manhwaDoc = snapshot.docs[0];
+  const manhwa = manhwaDoc.data();
+  const manhwaId = manhwaDoc.id;
 
-const chapterDoc = docsOrdenados[0];
-const chapter = chapterDoc.data();
+  const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaId;
+  const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
+  const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
 
-const manhwaRef = chapterDoc.ref.parent.parent;
-if (!manhwaRef) return;
+  const updatedAt = manhwa.updatedAt?.toDate
+    ? manhwa.updatedAt.toDate().toISOString()
+    : String(Date.now());
 
-const manhwaDoc = await manhwaRef.get();
-if (!manhwaDoc.exists) return;
-
-const manhwa = manhwaDoc.data();
-const manhwaId = manhwaDoc.id;
-const chapterId = chapterDoc.id;
-
-const updatedAt = chapter.updatedAt?.toDate
-  ? chapter.updatedAt.toDate().toISOString()
-  : String(chapter.updatedAt || Date.now());
-
-const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
+  const itemId = `${manhwaId}:${updatedAt}`;
 
   const alreadySent = await Announcement.findOne({
     guildId: guild.id,
@@ -391,42 +526,41 @@ const itemId = `${manhwaId}:${chapterId}:${updatedAt}`;
   });
 
   if (alreadySent) {
-  console.log("JÁ ENVIADO:", itemId);
-  return;
-}
+    console.log('JÁ ENVIADO:', itemId);
+    return;
+  }
 
-console.log("NOVO ANÚNCIO:", itemId);
-const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaDoc.id;
-const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
-const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
-  const chapterUrl = config.siteUrl;
+  const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaId}`;
 
-  const embed = new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle('☾ Capítulo atualizado na Noctra')
-    .setDescription(
-      `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
-      `✦ **Obra:** ${obraTitulo}\n` +
-      `✦ **Capítulo:** ${capituloTitulo}\n\n` +
-      `As páginas foram atualizadas. Continue a leitura e acompanhe essa história diretamente pelo site.\n\n` +
-      `[Ler agora](${chapterUrl})`
-    )
-    .setFooter({ text: 'Noctra Core • Atualização automática' })
-    .setTimestamp();
+  const bannerBuffer = await criarBannerAtualizacao({
+    obraTitulo,
+    capituloTitulo,
+    capaUrl
+  });
 
-  if (capaUrl) embed.setImage(capaUrl);
+  const attachment = new AttachmentBuilder(bannerBuffer, {
+    name: 'noctra-atualizacao.png'
+  });
 
-  console.log("ENVIANDO EMBED NO CANAL:", channel.id);
-  
-await channel.send({ embeds: [embed] });
-  
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('Ler agora')
+      .setStyle(ButtonStyle.Link)
+      .setURL(obraUrl)
+  );
+
+  await channel.send({
+    content: '☾ **Nova atualização disponível na Noctra Core**',
+    files: [attachment],
+    components: [row]
+  });
+
   await Announcement.create({
     guildId: guild.id,
     type: 'chapter',
     itemId
   }).catch(() => {});
 }
-
 async function sendLog(guild, title, description, color = '#2b2d31') {
   const config = await ensureConfig(guild.id);
   if (!config.logChannelId) return;
@@ -1690,28 +1824,37 @@ if (command === 'atualizacao') {
   const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaDoc.id;
   const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
   const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
+const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaDoc.id}`;
 
-  const embed = new EmbedBuilder()
-    .setColor('#111111')
-    .setTitle('☾ Atualização Manual • Noctra')
-    .setDescription(
-      `✦ **Obra:** ${obraTitulo}\n` +
-      `✦ **Capítulo:** ${capituloTitulo}\n\n` +
-      `[Ler agora](${config.siteUrl})`
-    )
-    .setFooter({ text: 'Noctra Core • Atualização manual' })
-    .setTimestamp();
+const bannerBuffer = await criarBannerAtualizacao({
+  obraTitulo,
+  capituloTitulo,
+  capaUrl
+});
 
-  if (capaUrl) embed.setImage(capaUrl);
+const attachment = new AttachmentBuilder(bannerBuffer, {
+  name: 'noctra-atualizacao.png'
+});
 
-  await channel.send({ embeds: [embed] });
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setLabel('Ler agora')
+    .setStyle(ButtonStyle.Link)
+    .setURL(obraUrl)
+);
 
-  await interaction.reply({
-    content: 'Atualização enviada manualmente.',
-    ephemeral: true
-  });
+await channel.send({
+  content: '☾ **Nova atualização disponível na Noctra Core**',
+  files: [attachment],
+  components: [row]
+});
 
-  return;
+await interaction.reply({
+  content: 'Atualização enviada manualmente.',
+  ephemeral: true
+});
+
+return;
 }
     
   if (command === 'top') {
