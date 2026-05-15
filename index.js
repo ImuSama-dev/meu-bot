@@ -346,6 +346,7 @@ async function checkNewChapterUpdates(guild) {
 
   const snapshot = await getFirestore()
   .collectionGroup('chapters')
+  .orderBy('updatedAt', 'desc')
   .limit(10)
   .get()
     .catch(err => {
@@ -750,7 +751,7 @@ for (const guild of client.guilds.cache.values()) {
   console.log('Checagem de capitulos agendada para iniciar em 2 minutos.');
   setTimeout(() => {
     checkChapterUpdates();
-    setInterval(checkChapterUpdates, 10 * 60 * 1000);
+    setInterval(checkChapterUpdates, 1 * 60 * 1000);
   }, 2 * 60 * 1000);
 
   const rest = new REST({ version: '10' }).setToken(token);
