@@ -344,9 +344,10 @@ async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
   const ctx = canvas.getContext('2d');
 
   const gradient = ctx.createLinearGradient(0, 0, 1600, 900);
-  gradient.addColorStop(0, '#05000a');
-  gradient.addColorStop(0.45, '#160020');
-  gradient.addColorStop(1, '#05000a');
+gradient.addColorStop(0, '#070010');
+gradient.addColorStop(0.4, '#14001f');
+gradient.addColorStop(0.7, '#090014');
+gradient.addColorStop(1, '#020006');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 1600, 900);
 
@@ -377,14 +378,14 @@ async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
       const capa = await loadImage(capaUrl);
 
       ctx.save();
-      roundRect(ctx, 95, 105, 415, 680, 30);
+     roundRect(ctx, 80, 95, 470, 720, 35);
       ctx.clip();
-      ctx.drawImage(capa, 95, 105, 415, 680);
+      ctx.drawImage(capa, 80, 95, 470, 720);
       ctx.restore();
 
       ctx.strokeStyle = 'rgba(236,72,153,0.95)';
       ctx.lineWidth = 5;
-      roundRect(ctx, 95, 105, 415, 680, 30);
+     roundRect(ctx, 80, 95, 470, 720, 35);
       ctx.stroke();
     } catch (err) {
       console.log('Erro ao carregar capa no banner:', err.message);
@@ -392,12 +393,12 @@ async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
   }
 
   ctx.fillStyle = 'rgba(255,255,255,0.055)';
-  roundRect(ctx, 570, 350, 870, 285, 28);
+  roundRect(ctx, 560, 360, 900, 320, 34);
   ctx.fill();
 
   ctx.strokeStyle = 'rgba(236,72,153,0.35)';
   ctx.lineWidth = 2;
-  roundRect(ctx, 570, 350, 870, 285, 28);
+  roundRect(ctx, 560, 360, 900, 320, 34);
   ctx.stroke();
 
   ctx.textAlign = 'center';
@@ -407,12 +408,15 @@ async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
   ctx.fillText('☾ NOCTRA CORE ☾', 1000, 150);
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 82px Georgia';
+  ctx.font = 'bold 110px Georgia';
+  ctx.shadowColor = '#ff4fc3';
+  ctx.shadowBlur = 30;
   ctx.fillText('NOVA ATUALIZAÇÃO', 1000, 260);
+  ctx.shadowBlur = 0;
 
   ctx.fillStyle = '#ffd6ea';
   ctx.font = '30px Arial';
-  ctx.fillText('UM NOVO CAPÍTULO ACABA DE SER LANÇADO', 1000, 320);
+  ctx.fillText('UM NOVO CAPÍTULO ACABA DE SER LANÇADO', 1000, 345);
 
   ctx.textAlign = 'left';
 
@@ -438,19 +442,18 @@ async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
   btnGradient.addColorStop(1, '#ec4899');
 
   ctx.fillStyle = btnGradient;
-  roundRect(ctx, 610, 700, 780, 95, 28);
+  roundRect(ctx, 610, 725, 780, 110, 35);
   ctx.fill();
 
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
   ctx.lineWidth = 2;
-  roundRect(ctx, 610, 700, 780, 95, 28);
+  roundRect(ctx, 610, 725, 780, 110, 35);
   ctx.stroke();
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 42px Georgia';
-  ctx.fillText('LER AGORA', 1000, 762);
-
+  ctx.fillText('LER AGORA', 1000, 795);
   ctx.fillStyle = '#ff8ac8';
   ctx.font = '26px Arial';
   ctx.fillText('HISTÓRIAS QUE FLORESCEM NA ESCURIDÃO', 800, 840);
