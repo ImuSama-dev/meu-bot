@@ -386,7 +386,7 @@ async function checkNewChapterUpdates(guild) {
     return;
   }
 
-  const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaId}`;
+  const obraUrl = `${config.siteUrl.replace('index.html', 'obra.html')}?id=${manhwaId}`;
   const row = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
     .setLabel('Ler agora')
@@ -1683,7 +1683,7 @@ if (command === 'atualizacao') {
   const obraTitulo = manhwa.titulo || manhwa.title || manhwa.nome || manhwaDoc.id;
   const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
   const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
-const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaDoc.id}`;
+const obraUrl = `${config.siteUrl.replace('index.html', 'obra.html')}?id=${manhwaDoc.id}`;
 
 const row = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
