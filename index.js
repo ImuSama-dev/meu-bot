@@ -19,7 +19,6 @@ const {
  TextInputStyle,
  Routes
 } = require('discord.js');
-const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const { REST } = require('@discordjs/rest');
 const mongoose = require('mongoose');
 let voiceTools;
@@ -339,152 +338,7 @@ async function ensureConfig(serverId) {
     economy: { ...DEFAULT_CONFIG.economy, ...(raw.economy || {}) }
   };
 }
-async function criarBannerAtualizacao({ obraTitulo, capituloTitulo, capaUrl }) {
-  const canvas = createCanvas(1600, 900);
-  const ctx = canvas.getContext('2d');
 
-  const gradient = ctx.createLinearGradient(0, 0, 1600, 900);
-gradient.addColorStop(0, '#070010');
-gradient.addColorStop(0.4, '#14001f');
-gradient.addColorStop(0.7, '#090014');
-gradient.addColorStop(1, '#020006');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 1600, 900);
-
-  ctx.fillStyle = 'rgba(236,72,153,0.18)';
-  ctx.beginPath();
-  ctx.arc(1260, 150, 270, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(236,72,153,0.75)';
-  ctx.lineWidth = 4;
-  roundRect(ctx, 45, 45, 1510, 810, 35);
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(168,85,247,0.35)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, 80, 80, 1440, 740, 28);
-  ctx.stroke();
-
-  for (let i = 0; i < 90; i++) {
-    ctx.fillStyle = `rgba(255,170,220,${Math.random() * 0.7})`;
-    ctx.beginPath();
-    ctx.arc(Math.random() * 1600, Math.random() * 900, Math.random() * 2.2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  if (capaUrl) {
-    try {
-      const capa = await loadImage(capaUrl);
-
-      ctx.save();
-     roundRect(ctx, 60, 90, 500, 760, 40);
-      ctx.clip();
-      ctx.drawImage(capa, 60, 90, 500, 760);
-      ctx.restore();
-
-      ctx.strokeStyle = 'rgba(236,72,153,0.95)';
-      ctx.lineWidth = 5;
-     roundRect(ctx, 60, 90, 500, 760, 40);
-      ctx.stroke();
-    } catch (err) {
-      console.log('Erro ao carregar capa no banner:', err.message);
-    }
-  }
-
-  ctx.fillStyle = 'rgba(255,255,255,0.055)';
-  roundRect(ctx, 600, 360, 820, 360, 40);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(236,72,153,0.35)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, 600, 360, 820, 360, 40);
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-
-  ctx.fillStyle = '#ff8ac8';
-  ctx.font = 'bold 38px Arial';
-  ctx.fillText('NOCTRA CORE', 1000, 150);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 82px Georgia';
-  ctx.shadowColor = '#ff4fc3';
-  ctx.shadowBlur = 30;
-  ctx.fillText('NOVA ATUALIZAÇÃO', 980, 240);
-  ctx.shadowBlur = 0;
-
-  ctx.fillStyle = '#ffd6ea';
-  ctx.font = '30px Arial';
-  ctx.fillText('UM NOVO CAPÍTULO ACABA DE SER LANÇADO', 1000, 345);
-
-  ctx.textAlign = 'left';
-
-  ctx.fillStyle = '#ff6bbd';
-  ctx.font = 'bold 30px Arial';
-  ctx.fillText('OBRA', 780, 455);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 45px Georgia';
-  ctx.fillText(cortarTexto(ctx, obraTitulo, 580), 780, 535);
-
-  ctx.fillStyle = '#ff6bbd';
-  ctx.font = 'bold 30px Arial';
- ctx.fillText('CAPÍTULO', 780, 620);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 45px Georgia';
- ctx.fillText(cortarTexto(ctx, capituloTitulo, 580), 780, 690);
-
-  const btnGradient = ctx.createLinearGradient(610, 700, 1390, 790);
-  btnGradient.addColorStop(0, '#4c0519');
-  btnGradient.addColorStop(0.5, '#a21caf');
-  btnGradient.addColorStop(1, '#ec4899');
-
-  ctx.fillStyle = btnGradient;
-  roundRect(ctx, 650, 770, 700, 115, 42);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = 2;
-  roundRect(ctx, 650, 770, 700, 115, 42);
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 42px Georgia';
-  ctx.fillText('LER AGORA', 1000, 845);
-  ctx.fillStyle = '#ff8ac8';
-  ctx.font = '26px Arial';
-  ctx.fillText('HISTÓRIAS QUE FLORESCEM NA ESCURIDÃO', 800, 960);
-  return canvas.toBuffer('image/png');
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function cortarTexto(ctx, texto, larguraMaxima) {
-  if (!texto) return '';
-  if (ctx.measureText(texto).width <= larguraMaxima) return texto;
-
-  let cortado = texto;
-  while (ctx.measureText(cortado + '...').width > larguraMaxima) {
-    cortado = cortado.slice(0, -1);
-  }
-
-  return cortado + '...';
-}
 async function checkNewChapterUpdates(guild) {
   const config = await ensureConfig(guild.id);
   if (!config.updatesChannelId) return;
@@ -533,30 +387,33 @@ async function checkNewChapterUpdates(guild) {
   }
 
   const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaId}`;
-
-  const bannerBuffer = await criarBannerAtualizacao({
-    obraTitulo,
-    capituloTitulo,
-    capaUrl
-  });
-
-  const attachment = new AttachmentBuilder(bannerBuffer, {
-    name: 'noctra-atualizacao.png'
-  });
-
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setLabel('Ler agora')
-      .setStyle(ButtonStyle.Link)
-      .setURL(obraUrl)
-  );
+  new ButtonBuilder()
+    .setLabel('Ler agora')
+    .setStyle(ButtonStyle.Link)
+    .setURL(obraUrl)
+);
 
-  await channel.send({
-    content: '☾ **Nova atualização disponível na Noctra Core**',
-    files: [attachment],
-    components: [row]
-  });
+const embed = new EmbedBuilder()
+  .setColor('#a855f7')
+  .setTitle('☾ Capítulo atualizado na Noctra Core')
+  .setDescription(
+    `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
+    `✦ **Obra:** ${obraTitulo}\n` +
+    `✦ **Capítulo:** ${capituloTitulo}\n\n` +
+    `As páginas foram atualizadas. Continue a leitura e acompanhe essa história diretamente pelo site.`
+  )
+  .setImage(capaUrl)
+  .setFooter({
+    text: `Noctra Core • Atualização automática`
+  })
+  .setTimestamp();
 
+await channel.send({
+  content: '☾ **Nova atualização disponível na Noctra Core**',
+  embeds: [embed],
+  components: [row]
+});
   await Announcement.create({
     guildId: guild.id,
     type: 'chapter',
@@ -1828,26 +1685,30 @@ if (command === 'atualizacao') {
   const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
 const obraUrl = `${config.siteUrl.replace('index.html', 'reader.html')}?id=${manhwaDoc.id}`;
 
-const bannerBuffer = await criarBannerAtualizacao({
-  obraTitulo,
-  capituloTitulo,
-  capaUrl
-});
-
-const attachment = new AttachmentBuilder(bannerBuffer, {
-  name: 'noctra-atualizacao.png'
-});
-
 const row = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
     .setLabel('Ler agora')
     .setStyle(ButtonStyle.Link)
     .setURL(obraUrl)
 );
+const embed = new EmbedBuilder()
+  .setColor('#a855f7')
+  .setTitle('☾ Capítulo atualizado na Noctra Core')
+  .setDescription(
+    `Uma nova atualização acaba de chegar à **Noctra**.\n\n` +
+    `✦ **Obra:** ${obraTitulo}\n` +
+    `✦ **Capítulo:** ${capituloTitulo}\n\n` +
+    `As páginas foram atualizadas. Continue a leitura e acompanhe essa história diretamente pelo site.`
+  )
+  .setImage(capaUrl)
+  .setFooter({
+    text: `Noctra Core • Atualização automática`
+  })
+  .setTimestamp();
 
 await channel.send({
   content: '☾ **Nova atualização disponível na Noctra Core**',
-  files: [attachment],
+  embeds: [embed],
   components: [row]
 });
 
