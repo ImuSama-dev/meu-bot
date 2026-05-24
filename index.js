@@ -410,9 +410,12 @@ const embed = new EmbedBuilder()
   .setTimestamp();
 
 await channel.send({
-  content: '☾ **Nova atualização disponível na Noctra Core**',
+  content: `<@&${config.memberRoleId}> ☾ **Nova atualização disponível na Noctra Core**`,
   embeds: [embed],
-  components: [row]
+  components: [row],
+  allowedMentions: {
+    roles: [config.memberRoleId]
+  }
 });
   await Announcement.create({
     guildId: guild.id,
@@ -1707,9 +1710,12 @@ const embed = new EmbedBuilder()
   .setTimestamp();
 
 await channel.send({
-  content: '☾ **Nova atualização disponível na Noctra Core**',
+  content: `<@&${config.memberRoleId}> ☾ **Nova atualização disponível na Noctra Core**`,
   embeds: [embed],
-  components: [row]
+  components: [row],
+  allowedMentions: {
+    roles: [config.memberRoleId]
+  }
 });
 
 await interaction.reply({
