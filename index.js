@@ -129,7 +129,7 @@ siteUrl: process.env.SITE_URL || 'https://imusama-dev.github.io/noctra-site/inde
   automod: {
     enabled: true,
     capsMinLength: 100,
-    maxLength: 400,
+    maxLength: 2000,
     spamLimit: 6,
     spamWindowMs: 5000,
     timeoutMs: 5 * 60 * 1000
