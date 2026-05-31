@@ -1658,12 +1658,12 @@ const canalAvisos = interaction.guild.channels.cache.get('1502761123852849212');
 
 if (!canalAvisos) {
   return interaction.reply({
-    content: 'Canal de avisos não configurado.',
+    content: 'Canal de recrutamento não encontrado.',
     ephemeral: true
   });
 }
 
-await channel.send({
+await canalAvisos.send({
   embeds: [embed]
 });
 
@@ -1671,7 +1671,8 @@ await interaction.reply({
   content: `Recrutamento enviado em ${canalAvisos}.`,
   ephemeral: true
 });
-      return;
+
+return;
 }
     
 async function findYoutubeVideo(query) {
