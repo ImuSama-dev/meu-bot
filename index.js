@@ -70,6 +70,7 @@ const DENUNCIAS_CHANNEL_ID = "1508246816993312828";
 const DENUNCIAS_STAFF_CHANNEL_ID = "1510609309916987442";
 const COMO_AJUDAR_CHANNEL_ID = "1508254799345356991";
 const COMO_LER_CHANNEL_ID = "1508228386361970859";
+const LINKS_OFICIAIS_CHANNEL_ID = "1508228460349358100";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -2147,8 +2148,10 @@ ephemeral: true
 
 return;
 }
-    if (command === 'comoler') {
+    
+if (command === 'comoler') {
   const channel = interaction.guild.channels.cache.get(COMO_LER_CHANNEL_ID);
+  const linksChannel = interaction.guild.channels.cache.get(LINKS_OFICIAIS_CHANNEL_ID);
 
   if (!channel) {
     return interaction.reply({
@@ -2157,52 +2160,48 @@ return;
     });
   }
 
-  const siteUrl = 'https://imusama-dev.github.io/noctra-site/index.html';
+  const linksText = linksChannel ? `${linksChannel}` : '#links-oficiais';
 
   const embed = new EmbedBuilder()
     .setColor('#111111')
-    .setTitle('❓ Como ler no site da Noctra Core')
+    .setTitle('❓ Como ler no site')
     .setDescription(
-      `A leitura das obras da Noctra Core é feita pelo nosso site oficial atual.\n\n` +
+      `Para acessar as obras da Noctra Core, use o link oficial disponível no canal ${linksText}.\n\n` +
 
-      `✦ **Acesse o site:**\n` +
-      `${siteUrl}\n\n` +
+      `✦ **Como começar a ler:**\n\n` +
 
-      `❖ **Como começar a ler:**\n` +
-      `1. Entre no site pelo botão abaixo ou pelo link acima.\n` +
-      `2. Escolha a obra que deseja ler.\n` +
-      `3. Abra a página da obra.\n` +
-      `4. Selecione o capítulo disponível.\n` +
-      `5. Boa leitura.\n\n` +
+      `❖ **1. Acesse os links oficiais**\n` +
+      `Entre no canal ${linksText} e clique no link do site da Noctra Core.\n\n` +
+
+      `❖ **2. Escolha uma obra**\n` +
+      `Na página inicial, procure a obra que deseja ler e abra a página dela.\n\n` +
+
+      `❖ **3. Selecione um capítulo**\n` +
+      `Dentro da página da obra, escolha o capítulo disponível e comece a leitura.\n\n` +
+
+      `❖ **4. Continue lendo**\n` +
+      `Use a rolagem da página ou os botões disponíveis para acompanhar o capítulo.\n\n` +
 
       `❖ **Se algo não carregar:**\n` +
-      `Atualize a página, tente novamente após alguns segundos ou avise a staff caso o problema continue.\n\n` +
-
-      `❖ **Importante:**\n` +
-      `O site ainda usa o link do GitHub Pages enquanto o domínio .com não está ativo.\n\n` +
+      `• atualize a página\n` +
+      `• aguarde alguns segundos\n` +
+      `• tente abrir novamente\n` +
+      `• se continuar com erro, avise a staff\n\n` +
 
       `────────────────────\n` +
-      `Noctra Core • Sistema de leitura`
+      `Noctra Core • Guia de leitura`
     )
     .setFooter({
       text: 'Noctra Core'
     })
     .setTimestamp();
 
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setLabel('Abrir site')
-      .setStyle(ButtonStyle.Link)
-      .setURL(siteUrl)
-  );
-
   await channel.send({
-    embeds: [embed],
-    components: [row]
+    embeds: [embed]
   });
 
   await interaction.reply({
-    content: `Painel de como ler no site enviado em ${channel}.`,
+    content: `Painel de como ler enviado em ${channel}.`,
     ephemeral: true
   });
 
