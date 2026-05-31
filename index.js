@@ -1313,9 +1313,14 @@ if (interaction.customId === 'candidatura_editor') {
       content: `${interaction.user}`,
       embeds: [
         new EmbedBuilder()
-          .setColor('#111111')
-          .setTitle('☾ Ticket aberto')
-          .setDescription('A staff responderá em breve.')
+          .setColor('#0ea5e9')
+.setTitle('🎫 Atendimento aberto')
+.setDescription(
+  `Olá ${interaction.user}, seu ticket foi aberto com sucesso.\n\n` +
+  `Explique sua dúvida ou problema com o máximo de detalhes possível.\n` +
+  `Se tiver prints, links ou informações importantes, envie aqui.\n\n` +
+  `A staff responderá assim que possível.`
+)
       ],
       components: [row]
     });
@@ -2280,16 +2285,52 @@ return;
 
     if (command === 'ticket') {
       const channel = interaction.options.getChannel('canal');
-      const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
-        .setTitle('Suporte Noctra')
-        .setDescription('Abra um ticket para falar com a staff.');
+const embed = new EmbedBuilder()
+  .setColor('#0ea5e9')
+  .setTitle('🎫 Suporte • Noctra Core')
+  .setDescription(
+    `Precisa falar diretamente com a staff?\n` +
+    `Abra um ticket para receber atendimento privado.\n\n` +
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('ticket_open').setLabel('Abrir ticket').setStyle(ButtonStyle.Primary)
-      );
+    `✦ **Use tickets para:**\n\n` +
 
-      await channel.send({ embeds: [embed], components: [row] });
+    `❖ dúvidas sobre o servidor\n` +
+    `❖ problemas com sua conta ou cargos\n` +
+    `❖ assuntos que precisam de privacidade\n` +
+    `❖ suporte relacionado ao site\n` +
+    `❖ erros que você não quer expor em canais públicos\n` +
+    `❖ contato direto com a equipe\n\n` +
+
+    `✦ **Antes de abrir:**\n\n` +
+
+    `• explique o problema com clareza\n` +
+    `• envie prints, links ou detalhes se necessário\n` +
+    `• aguarde a resposta da staff com paciência\n` +
+    `• não abra vários tickets sobre o mesmo assunto\n\n` +
+
+    `❖ Para denúncias, use o canal <#${DENUNCIAS_CHANNEL_ID}>.\n` +
+    `❖ Para pedidos de obras, use o canal <#${pedidosChannelId}>.\n` +
+    `❖ Para sugestões, use o canal <#${SUGESTOES_CHANNEL_ID}>.\n\n` +
+
+    `────────────────────\n` +
+    `Noctra Core • Atendimento da staff`
+  )
+  .setFooter({
+    text: 'Noctra Core • Suporte Oficial'
+  })
+  .setTimestamp();
+const row = new ActionRowBuilder().addComponents(
+  new ButtonBuilder()
+    .setCustomId('ticket_open')
+    .setLabel('Abrir atendimento')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('🎫')
+);
+
+await channel.send({
+  embeds: [embed],
+  components: [row]
+});
       await interaction.reply({ content: 'Painel de ticket enviado.', ephemeral: true });
       return;
     }
