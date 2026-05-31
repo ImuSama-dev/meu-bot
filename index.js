@@ -72,6 +72,8 @@ const COMO_AJUDAR_CHANNEL_ID = "1508254799345356991";
 const COMO_LER_CHANNEL_ID = "1508228386361970859";
 const LINKS_OFICIAIS_CHANNEL_ID = "1508228460349358100";
 const TRADUTORES_CHANNEL_ID = "1508254732911644824";
+const REVISORES_CHANNEL_ID = "1508254657984856084";
+const EDITORES_CHANNEL_ID = "1508254961769779400";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -1629,29 +1631,29 @@ const embed = new EmbedBuilder()
   .setColor('#a855f7')
   .setTitle('✦ Recrutamento • Noctra Core')
   .setDescription(
-    `A Noctra Core está recrutando pessoas interessadas em participar da equipe de produção.\n\n` +
+  `A Noctra Core está recrutando pessoas interessadas em participar da equipe de produção.\n\n` +
 
-    `✦ **Como se candidatar:**\n\n` +
+  `✦ **Como se candidatar:**\n\n` +
 
-    `❖ Para tradução, acesse o canal 🌐 | tradutores.\n` +
-    `❖ Para revisão, acesse o canal ✍️ | revisores.\n` +
-    `❖ Para edição, acesse o canal 🖌️ | editores.\n\n` +
+  `❖ Para tradução, acesse o canal <#1508254732911644824>.\n` +
+  `❖ Para revisão, acesse o canal <#1508254657984856084>.\n` +
+  `❖ Para edição, acesse o canal <#1508254961769779400>.\n\n` +
 
-    `Cada área possui sua própria explicação e formulário de candidatura.\n` +
-    `Escolha a função que combina mais com você e envie sua candidatura pelo canal correto.\n\n` +
+  `Cada área possui sua própria explicação e formulário de candidatura.\n` +
+  `Escolha a função que combina mais com você e envie sua candidatura pelo canal correto.\n\n` +
 
-    `✦ **Procuramos pessoas:**\n` +
-    `• organizadas\n` +
-    `• dedicadas\n` +
-    `• interessadas em Yuri ou Yaoi\n` +
-    `• com vontade de aprender e ajudar a comunidade\n\n` +
+  `✦ **Procuramos pessoas:**\n` +
+  `• organizadas\n` +
+  `• dedicadas\n` +
+  `• interessadas em Yuri, Yaoi, GL ou BL\n` +
+  `• com vontade de aprender e ajudar a comunidade\n\n` +
 
-    `❖ Não precisa ter experiência profissional.\n` +
-    `Nos canais específicos, explicamos o que cada função faz e como podemos orientar quem está começando.\n\n` +
+  `❖ Não precisa ter experiência profissional.\n` +
+  `Nos canais específicos, explicamos o que cada função faz e orientamos quem está começando.\n\n` +
 
-    `────────────────────\n` +
-    `Noctra Core • Recrutamento Oficial`
-  )
+  `────────────────────\n` +
+  `Noctra Core • Recrutamento Oficial`
+)
   .setFooter({
     text: 'Noctra Core • Staff Oficial'
   })
