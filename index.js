@@ -1074,6 +1074,24 @@ if (interaction.isButton()) {
     await interaction.showModal(modal);
     return;
   }
+    if (interaction.customId === 'enviar_sugestao') {
+    const modal = new ModalBuilder()
+      .setCustomId('modal_sugestao')
+      .setTitle('Enviar sugestão');
+
+    const sugestaoInput = new TextInputBuilder()
+      .setCustomId('texto_sugestao')
+      .setLabel('Digite sua sugestão')
+      .setStyle(TextInputStyle.Paragraph)
+      .setRequired(true)
+      .setPlaceholder('Explique sua ideia ou melhoria para a Noctra Core.');
+
+    const row = new ActionRowBuilder().addComponents(sugestaoInput);
+    modal.addComponents(row);
+
+    await interaction.showModal(modal);
+    return;
+  }
 
   if (interaction.customId === 'ticket_open') {
     const config = await ensureConfig(interaction.guild.id);
@@ -1212,7 +1230,41 @@ if (interaction.isModalSubmit()) {
 
   return;
 }
+  if (interaction.customId === 'modal_sugestao') {
+    const sugestao = interaction.fields.getTextInputValue('texto_sugestao');
 
+    const channel = interaction.guild.channels.cache.get(SUGESTOES_CHANNEL_ID);
+
+    if (!channel) {
+      return interaction.reply({
+        content: 'Canal de sugestões não encontrado.',
+        ephemeral: true
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#111111')
+      .setTitle('💡 Nova sugestão recebida')
+      .setDescription(
+        `✦ **Sugestão enviada por:** ${interaction.user}\n\n` +
+        `❖ **Sugestão:**\n${sugestao}`
+      )
+      .setFooter({
+        text: 'Noctra Core • Sistema de Sugestões'
+      })
+      .setTimestamp();
+
+    await channel.send({
+      embeds: [embed]
+    });
+
+    await interaction.reply({
+      content: 'Sua sugestão foi enviada com sucesso.',
+      ephemeral: true
+    });
+
+    return;
+  }
 if (interaction.customId === 'modal_pedido') {
 
 const obra = interaction.fields.getTextInputValue('nome_obra');
