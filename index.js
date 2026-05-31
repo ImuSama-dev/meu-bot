@@ -66,6 +66,8 @@ const guildId = process.env.GUILD_ID || '1334696250070663231';
 const pedidosChannelId = '1503133804477419530';
 const recrutamentoChannelId = '1502761123852849212';
 const SUGESTOES_CHANNEL_ID = "1508246866909986947";
+const DENUNCIAS_CHANNEL_ID = "1508246816993312828";
+const DENUNCIAS_STAFF_CHANNEL_ID = "1510609309916987442";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -686,6 +688,11 @@ new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   
   new SlashCommandBuilder()
+  .setName('denuncias')
+  .setDescription('Envia o painel de denúncias')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  new SlashCommandBuilder()
   .setName('sugestoes')
   .setDescription('Envia o painel de sugestões')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
@@ -994,6 +1001,42 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  
+  if (interaction.customId === 'abrir_denuncia') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_denuncia')
+    .setTitle('Enviar denúncia');
+
+  const usuarioInput = new TextInputBuilder()
+    .setCustomId('usuario_denunciado')
+    .setLabel('Usuário denunciado')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Nome, @ ou ID da pessoa');
+
+  const motivoInput = new TextInputBuilder()
+    .setCustomId('motivo_denuncia')
+    .setLabel('Motivo da denúncia')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Explique o que aconteceu com detalhes.');
+
+  const provasInput = new TextInputBuilder()
+    .setCustomId('provas_denuncia')
+    .setLabel('Provas ou links')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false)
+    .setPlaceholder('Prints, links de mensagens ou vídeos, se tiver.');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(usuarioInput),
+    new ActionRowBuilder().addComponents(motivoInput),
+    new ActionRowBuilder().addComponents(provasInput)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
   if (interaction.customId === 'abrir_candidatura') {
     const modal = new ModalBuilder()
       .setCustomId('modal_candidatura')
@@ -1104,6 +1147,45 @@ if (interaction.isButton()) {
   }
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_denuncia') {
+  const usuario = interaction.fields.getTextInputValue('usuario_denunciado');
+  const motivo = interaction.fields.getTextInputValue('motivo_denuncia');
+  const provas = interaction.fields.getTextInputValue('provas_denuncia') || 'Nenhuma prova enviada.';
+
+  const canalStaff = interaction.guild.channels.cache.get(DENUNCIAS_STAFF_CHANNEL_ID);
+
+  if (!canalStaff) {
+    return interaction.reply({
+      content: 'Canal da staff para denúncias não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#dc2626')
+    .setTitle('⚠️ Nova denúncia recebida')
+    .setDescription(
+      `✦ **Denúncia enviada por:** ${interaction.user}\n\n` +
+      `❖ **Usuário denunciado:**\n${usuario}\n\n` +
+      `❖ **Motivo:**\n${motivo}\n\n` +
+      `❖ **Provas:**\n${provas}`
+    )
+    .setFooter({
+      text: 'Noctra Core • Sistema de Denúncias'
+    })
+    .setTimestamp();
+
+  await canalStaff.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Sua denúncia foi enviada para a staff com segurança.',
+    ephemeral: true
+  });
+
+  return;
+}
   if (interaction.customId === 'modal_candidatura') {
   const texto = interaction.fields.getTextInputValue('texto_candidatura')?.trim();
 
@@ -1876,6 +1958,59 @@ return;
     }
     
 if (command === 'pedidos') {
+  if (command === 'denuncias') {
+  const channel = interaction.guild.channels.cache.get(DENUNCIAS_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de denúncias não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#dc2626')
+    .setTitle('⚠️ Denúncias • Noctra Core')
+    .setDescription(
+      `✦ Utilize este sistema para denunciar situações que prejudiquem a comunidade da Noctra Core.\n\n` +
+      `❖ Você pode denunciar:\n` +
+      `• assédio ou perseguição\n` +
+      `• preconceito e discriminação\n` +
+      `• spam ou divulgação indevida\n` +
+      `• comportamento tóxico\n` +
+      `• conteúdo inadequado\n` +
+      `• descumprimento das regras\n\n` +
+      `✦ Ao enviar uma denúncia, informe o máximo de detalhes possíveis.\n\n` +
+      `❖ Caso tenha provas, como prints, links ou vídeos, envie junto.\n\n` +
+      `☾ Todas as denúncias são analisadas pela staff com discrição.\n\n` +
+      `────────────────────\n` +
+      `Noctra Core • Sistema de Denúncias`
+    )
+    .setFooter({
+      text: 'Noctra Core • Staff Oficial'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('abrir_denuncia')
+      .setLabel('Enviar denúncia')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('⚠️')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de denúncias enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
 
 const channel = interaction.guild.channels.cache.get(pedidosChannelId);
 
