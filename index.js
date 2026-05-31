@@ -1336,6 +1336,7 @@ if (interaction.customId === 'candidatura_editor') {
       ephemeral: true
     });
   }
+}
       if (interaction.customId === 'ticket_close') {
     const ticket = await Ticket.findOne({
       guildId: interaction.guild.id,
@@ -1369,6 +1370,8 @@ if (interaction.customId === 'candidatura_editor') {
 
     return;
   }
+    
+}
 if (interaction.isModalSubmit()) {
   if (interaction.customId === 'modal_editor') {
   const experiencia = interaction.fields.getTextInputValue('experiencia_editor');
