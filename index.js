@@ -1348,8 +1348,8 @@ if (interaction.isModalSubmit()) {
     });
   }
 
-  const embed = new EmbedBuilder()
-    .setColor('#a855f7')
+const embed = new EmbedBuilder()
+  .setColor('#ec4899')
     .setTitle('🖌️ Nova candidatura para editor/cleaner')
     .setDescription(
       `✦ **Candidato:** ${interaction.user}\n\n` +
