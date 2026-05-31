@@ -71,6 +71,7 @@ const DENUNCIAS_STAFF_CHANNEL_ID = "1510609309916987442";
 const COMO_AJUDAR_CHANNEL_ID = "1508254799345356991";
 const COMO_LER_CHANNEL_ID = "1508228386361970859";
 const LINKS_OFICIAIS_CHANNEL_ID = "1508228460349358100";
+const TRADUTORES_CHANNEL_ID = "1508254732911644824";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -536,6 +537,12 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  
+  new SlashCommandBuilder()
+  .setName('tradutores')
+  .setDescription('Envia o painel de recrutamento para tradutores')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
   new SlashCommandBuilder()
   .setName('links')
   .setDescription('Envia o painel de links oficiais')
@@ -1020,6 +1027,50 @@ client.on('interactionCreate', async (interaction) => {
 
 if (interaction.isButton()) {
   
+  if (interaction.customId === 'candidatura_tradutor') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_tradutor')
+    .setTitle('Candidatura para tradutor');
+
+  const idiomaInput = new TextInputBuilder()
+    .setCustomId('idioma_tradutor')
+    .setLabel('Qual idioma você sabe ou quer traduzir?')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: Inglês, espanhol, coreano...');
+
+  const experienciaInput = new TextInputBuilder()
+    .setCustomId('experiencia_tradutor')
+    .setLabel('Você já tem experiência com tradução?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Conte se já traduziu antes ou se quer aprender.');
+
+  const disponibilidadeInput = new TextInputBuilder()
+    .setCustomId('disponibilidade_tradutor')
+    .setLabel('Qual sua disponibilidade?')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: finais de semana, à noite, algumas horas por semana.');
+
+  const motivoInput = new TextInputBuilder()
+    .setCustomId('motivo_tradutor')
+    .setLabel('Por que deseja ajudar como tradutor?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Fale um pouco sobre seu interesse.');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(idiomaInput),
+    new ActionRowBuilder().addComponents(experienciaInput),
+    new ActionRowBuilder().addComponents(disponibilidadeInput),
+    new ActionRowBuilder().addComponents(motivoInput)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
+  
   if (interaction.customId === 'abrir_denuncia') {
   const modal = new ModalBuilder()
     .setCustomId('modal_denuncia')
@@ -1183,6 +1234,49 @@ if (interaction.isButton()) {
   }
 }
 if (interaction.isModalSubmit()) {
+  
+  if (interaction.customId === 'modal_tradutor') {
+  const idioma = interaction.fields.getTextInputValue('idioma_tradutor');
+  const experiencia = interaction.fields.getTextInputValue('experiencia_tradutor');
+  const disponibilidade = interaction.fields.getTextInputValue('disponibilidade_tradutor');
+  const motivo = interaction.fields.getTextInputValue('motivo_tradutor');
+
+  const canal = interaction.guild.channels.cache.get(recrutamentoChannelId);
+
+  if (!canal) {
+    return interaction.reply({
+      content: 'Canal de recrutamento não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#22c55e')
+    .setTitle('🌐 Nova candidatura para tradutor')
+    .setDescription(
+      `✦ **Candidato:** ${interaction.user}\n\n` +
+      `❖ **Idioma:**\n${idioma}\n\n` +
+      `❖ **Experiência:**\n${experiencia}\n\n` +
+      `❖ **Disponibilidade:**\n${disponibilidade}\n\n` +
+      `❖ **Motivo:**\n${motivo}`
+    )
+    .setFooter({
+      text: 'Noctra Core • Recrutamento'
+    })
+    .setTimestamp();
+
+  await canal.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Sua candidatura para tradutor foi enviada com sucesso.',
+    ephemeral: true
+  });
+
+  return;
+}
+  
   if (interaction.customId === 'modal_denuncia') {
   const usuario = interaction.fields.getTextInputValue('usuario_denunciado');
   const motivo = interaction.fields.getTextInputValue('motivo_denuncia');
@@ -2103,6 +2197,78 @@ return;
 
   return;
 }   
+    if (command === 'tradutores') {
+  const channel = interaction.guild.channels.cache.get(TRADUTORES_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de tradutores não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('🌐 Tradutores • Noctra Core')
+    .setDescription(
+      `Este canal é voltado para quem deseja ajudar a Noctra Core traduzindo obras para a comunidade.\n\n` +
+
+      `✦ **O que um tradutor faz?**\n\n` +
+
+      `❖ Traduz capítulos de obras selecionadas pela equipe.\n` +
+      `❖ Mantém o sentido original da história.\n` +
+      `❖ Adapta frases para uma leitura natural em português.\n` +
+      `❖ Trabalha junto com revisores e editores.\n` +
+      `❖ Entrega os textos com cuidado e responsabilidade.\n\n` +
+
+      `✦ **Idiomas bem-vindos:**\n\n` +
+
+      `• Inglês\n` +
+      `• Espanhol\n` +
+      `• Coreano\n` +
+      `• Japonês\n` +
+      `• Chinês\n` +
+      `• Outros idiomas, caso você tenha experiência ou interesse em aprender.\n\n` +
+
+      `✦ **Requisitos:**\n\n` +
+
+      `• Ter boa leitura e escrita em português.\n` +
+      `• Ter vontade de aprender e melhorar.\n` +
+      `• Ser responsável com prazos.\n` +
+      `• Ter disponibilidade para ajudar a equipe.\n` +
+      `• Respeitar a organização da staff.\n\n` +
+
+      `❖ **Não precisa ter experiência com traduções.**\n` +
+      `Se você nunca traduziu uma obra antes, nós ensinamos sem problemas. O mais importante é ter vontade de aprender, cuidado com o texto e compromisso com a equipe.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Recrutamento de tradutores`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('candidatura_tradutor')
+      .setLabel('Candidatar-se para tradutor')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('🌐')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de tradutores enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
     if (command === 'links') {
   const channel = interaction.guild.channels.cache.get(LINKS_OFICIAIS_CHANNEL_ID);
 
