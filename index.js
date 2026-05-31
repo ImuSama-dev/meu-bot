@@ -1336,7 +1336,6 @@ if (interaction.customId === 'candidatura_editor') {
       ephemeral: true
     });
   }
-}
       if (interaction.customId === 'ticket_close') {
     const ticket = await Ticket.findOne({
       guildId: interaction.guild.id,
@@ -1826,7 +1825,7 @@ if (!canalAvisos) {
     ephemeral: true
   });
 }
-await channel.send({
+await canalAvisos.send({
   embeds: [embed]
 });
   
