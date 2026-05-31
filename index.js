@@ -539,6 +539,10 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  new SlashCommandBuilder()
+  .setName('editores')
+  .setDescription('Envia o painel de recrutamento para editores e cleaners')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   
  new SlashCommandBuilder()
   .setName('revisores')
@@ -1033,6 +1037,51 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  
+if (interaction.customId === 'candidatura_editor') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_editor')
+    .setTitle('Candidatura para editor/cleaner');
+
+  const experienciaInput = new TextInputBuilder()
+    .setCustomId('experiencia_editor')
+    .setLabel('Você já editou ou limpou páginas antes?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Conte se já editou, limpou balões, usou Photopea, Photoshop etc.');
+
+  const ferramentaInput = new TextInputBuilder()
+    .setCustomId('ferramenta_editor')
+    .setLabel('Quais ferramentas você usa ou quer usar?')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: Photopea, Photoshop, Canva, Ibis Paint...');
+
+  const disponibilidadeInput = new TextInputBuilder()
+    .setCustomId('disponibilidade_editor')
+    .setLabel('Qual sua disponibilidade?')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: finais de semana, à noite, algumas horas por semana.');
+
+  const motivoInput = new TextInputBuilder()
+    .setCustomId('motivo_editor')
+    .setLabel('Por que deseja ajudar como editor/cleaner?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Fale um pouco sobre seu interesse.');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(experienciaInput),
+    new ActionRowBuilder().addComponents(ferramentaInput),
+    new ActionRowBuilder().addComponents(disponibilidadeInput),
+    new ActionRowBuilder().addComponents(motivoInput)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
+  
   if (interaction.customId === 'candidatura_revisor') {
   const modal = new ModalBuilder()
     .setCustomId('modal_revisor')
@@ -1284,6 +1333,47 @@ if (interaction.isButton()) {
   }
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_editor') {
+  const experiencia = interaction.fields.getTextInputValue('experiencia_editor');
+  const ferramenta = interaction.fields.getTextInputValue('ferramenta_editor');
+  const disponibilidade = interaction.fields.getTextInputValue('disponibilidade_editor');
+  const motivo = interaction.fields.getTextInputValue('motivo_editor');
+
+  const canal = interaction.guild.channels.cache.get(recrutamentoChannelId);
+
+  if (!canal) {
+    return interaction.reply({
+      content: 'Canal de recrutamento não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle('🖌️ Nova candidatura para editor/cleaner')
+    .setDescription(
+      `✦ **Candidato:** ${interaction.user}\n\n` +
+      `❖ **Experiência:**\n${experiencia}\n\n` +
+      `❖ **Ferramentas:**\n${ferramenta}\n\n` +
+      `❖ **Disponibilidade:**\n${disponibilidade}\n\n` +
+      `❖ **Motivo:**\n${motivo}`
+    )
+    .setFooter({
+      text: 'Noctra Core • Recrutamento'
+    })
+    .setTimestamp();
+
+  await canal.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Sua candidatura para editor/cleaner foi enviada com sucesso.',
+    ephemeral: true
+  });
+
+  return;
+}
   if (interaction.customId === 'modal_revisor') {
   const experiencia = interaction.fields.getTextInputValue('experiencia_revisor');
   const portugues = interaction.fields.getTextInputValue('portugues_revisor');
@@ -2203,6 +2293,77 @@ return;
       await interaction.reply({ content: 'Painel de ticket enviado.', ephemeral: true });
       return;
     }
+    if (command === 'editores') {
+  const channel = interaction.guild.channels.cache.get(EDITORES_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de editores e cleaners não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('🖌️ Editores e Cleaners • Noctra Core')
+    .setDescription(
+      `Este canal é voltado para quem deseja ajudar a Noctra Core na parte visual das obras.\n\n` +
+
+      `✦ **O que um editor/cleaner faz?**\n\n` +
+
+      `❖ Remove textos originais dos balões e páginas.\n` +
+      `❖ Limpa áreas da imagem para receber a tradução.\n` +
+      `❖ Insere os textos traduzidos nos balões.\n` +
+      `❖ Ajusta fonte, tamanho, posição e organização do texto.\n` +
+      `❖ Ajuda a deixar os capítulos bonitos e confortáveis de ler.\n\n` +
+
+      `✦ **Ferramentas comuns:**\n\n` +
+
+      `• Photoshop\n` +
+      `• Photopea\n` +
+      `• Canva\n` +
+      `• Ibis Paint\n` +
+      `• Outros editores de imagem que você saiba usar.\n\n` +
+
+      `✦ **Requisitos:**\n\n` +
+
+      `• Ter atenção aos detalhes.\n` +
+      `• Ter paciência para trabalhar com imagens.\n` +
+      `• Gostar de organização visual.\n` +
+      `• Ser responsável com prazos.\n` +
+      `• Ter vontade de aprender e ajudar a equipe.\n\n` +
+
+      `❖ **Não precisa ter experiência profissional.**\n` +
+      `Se você nunca editou ou limpou capítulos antes, nós ensinamos sem problemas. O mais importante é ter cuidado, paciência e vontade de aprender.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Recrutamento de editores e cleaners`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('candidatura_editor')
+      .setLabel('Candidatar-se para editor/cleaner')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('🖌️')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de editores e cleaners enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
  if (command === 'comoajudar') {
   const channel = interaction.guild.channels.cache.get(COMO_AJUDAR_CHANNEL_ID);
 
