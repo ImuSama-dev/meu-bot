@@ -1607,13 +1607,6 @@ if (!canalAvisos) {
     ephemeral: true
   });
 }
-  
-const row = new ActionRowBuilder().addComponents(
-  new ButtonBuilder()
-    .setCustomId('abrir_candidatura')
-    .setLabel('Quero me candidatar')
-    .setStyle(ButtonStyle.Success)
-);
 await channel.send({
   embeds: [embed]
 });
@@ -1635,9 +1628,9 @@ const embed = new EmbedBuilder()
 
   `✦ **Como se candidatar:**\n\n` +
 
-  `❖ Para tradução, acesse o canal <#1508254732911644824>.\n` +
-  `❖ Para revisão, acesse o canal <#1508254657984856084>.\n` +
-  `❖ Para edição, acesse o canal <#1508254961769779400>.\n\n` +
+`❖ Para tradução, acesse o canal <#${TRADUTORES_CHANNEL_ID}>.\n` +
+`❖ Para revisão, acesse o canal <#${REVISORES_CHANNEL_ID}>.\n` +
+`❖ Para edição, acesse o canal <#${EDITORES_CHANNEL_ID}>.\n\n` +
 
   `Cada área possui sua própria explicação e formulário de candidatura.\n` +
   `Escolha a função que combina mais com você e envie sua candidatura pelo canal correto.\n\n` +
