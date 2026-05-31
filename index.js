@@ -1643,7 +1643,7 @@ const embed = new EmbedBuilder()
     `✦ **Procuramos pessoas:**\n` +
     `• organizadas\n` +
     `• dedicadas\n` +
-    `• interessadas em Yuri, Yaoi, GL ou BL\n` +
+    `• interessadas em Yuri ou Yaoi\n` +
     `• com vontade de aprender e ajudar a comunidade\n\n` +
 
     `❖ Não precisa ter experiência profissional.\n` +
@@ -1668,16 +1668,8 @@ if (!canalAvisos) {
   });
 }
 
-const row = new ActionRowBuilder().addComponents(
-  new ButtonBuilder()
-    .setCustomId('abrir_candidatura')
-    .setLabel('Quero me candidatar')
-    .setStyle(ButtonStyle.Success)
-);
-
-await canalAvisos.send({
-  embeds: [embed],
-  components: [row]
+await channel.send({
+  embeds: [embed]
 });
 
 await interaction.reply({
