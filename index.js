@@ -1605,17 +1605,15 @@ if (!canalAvisos) {
     ephemeral: true
   });
 }
-
+  
 const row = new ActionRowBuilder().addComponents(
   new ButtonBuilder()
     .setCustomId('abrir_candidatura')
     .setLabel('Quero me candidatar')
     .setStyle(ButtonStyle.Success)
 );
-
-await canalAvisos.send({
-  embeds: [embed],
-  components: [row]
+await channel.send({
+  embeds: [embed]
 });
   
 await interaction.reply({
@@ -1628,28 +1626,36 @@ return;
     if (command === 'recrutamento') {
 
 const embed = new EmbedBuilder()
-.setColor('#8b5cf6')
-.setTitle('✦ Recrutamento • Noctra Core')
-.setDescription(
-`A Noctra Core está recrutando pessoas interessadas em participar da equipe de tradução.\n\n` +
+  .setColor('#a855f7')
+  .setTitle('✦ Recrutamento • Noctra Core')
+  .setDescription(
+    `A Noctra Core está recrutando pessoas interessadas em participar da equipe de produção.\n\n` +
 
-`✦ Procuramos pessoas:\n` +
-`• organizadas\n` +
-`• dedicadas\n` +
-`• interessadas em Yuri ou Yaoi\n\n` +
+    `✦ **Como se candidatar:**\n\n` +
 
-`❖ As obras serão enviadas pela administração.\n` +
-`❖ Cada pessoa poderá escolher preferências antes de começar.\n\n` +
+    `❖ Para tradução, acesse o canal 🌐 | tradutores.\n` +
+    `❖ Para revisão, acesse o canal ✍️ | revisores.\n` +
+    `❖ Para edição, acesse o canal 🖌️ | editores.\n\n` +
 
-`✦ O projeto busca qualidade, carinho e dedicação em cada capítulo traduzido.\n\n` +
+    `Cada área possui sua própria explicação e formulário de candidatura.\n` +
+    `Escolha a função que combina mais com você e envie sua candidatura pelo canal correto.\n\n` +
 
-`────────────────────\n` +
-`Noctra Core • Recrutamento Oficial`
-)
-.setFooter({
-  text: 'Noctra Core • Staff Oficial'
-})
-.setTimestamp();
+    `✦ **Procuramos pessoas:**\n` +
+    `• organizadas\n` +
+    `• dedicadas\n` +
+    `• interessadas em Yuri, Yaoi, GL ou BL\n` +
+    `• com vontade de aprender e ajudar a comunidade\n\n` +
+
+    `❖ Não precisa ter experiência profissional.\n` +
+    `Nos canais específicos, explicamos o que cada função faz e como podemos orientar quem está começando.\n\n` +
+
+    `────────────────────\n` +
+    `Noctra Core • Recrutamento Oficial`
+  )
+  .setFooter({
+    text: 'Noctra Core • Staff Oficial'
+  })
+  .setTimestamp();
 
 const config = await ensureConfig(interaction.guild.id);
 
