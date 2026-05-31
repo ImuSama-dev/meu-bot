@@ -65,6 +65,7 @@ const clientId = process.env.CLIENT_ID || '1499822762590736586';
 const guildId = process.env.GUILD_ID || '1334696250070663231';
 const pedidosChannelId = '1503133804477419530';
 const recrutamentoChannelId = '1502761123852849212';
+const SUGESTOES_CHANNEL_ID = "1508246866909986947";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -682,6 +683,11 @@ new SlashCommandBuilder()
 new SlashCommandBuilder()
   .setName('pedidos')
   .setDescription('Envia o painel de pedidos')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  new SlashCommandBuilder()
+  .setName('sugestoes')
+  .setDescription('Envia o painel de sugestões')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   new SlashCommandBuilder()
     .setName('roles')
@@ -1917,6 +1923,56 @@ ephemeral: true
 });
 
 return;
+}
+    if (command === 'sugestoes') {
+
+  const channel = interaction.guild.channels.cache.get(SUGESTOES_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de sugestões não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('💡 Sugestões • Noctra Core')
+    .setDescription(
+      `✦ Aqui você pode enviar sugestões para melhorar a Noctra Core.\n\n` +
+
+      `❖ Pode sugerir melhorias para o site, servidor, canais, sistema de leitura, eventos ou qualquer ideia que ajude a comunidade.\n\n` +
+
+      `✦ Antes de enviar, veja se alguém já sugeriu algo parecido.\n\n` +
+
+      `☾ Nossa equipe irá analisar todas as sugestões com carinho.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Sistema de Sugestões`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    });
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('enviar_sugestao')
+      .setLabel('Enviar sugestão')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('💡')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: 'Painel de sugestões enviado.',
+    ephemeral: true
+  });
+
+  return;
 }
     if (command === 'roles') {
       const channel = interaction.options.getChannel('canal');
