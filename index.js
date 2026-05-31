@@ -1336,7 +1336,39 @@ if (interaction.customId === 'candidatura_editor') {
       ephemeral: true
     });
   }
-}
+      if (interaction.customId === 'ticket_close') {
+    const ticket = await Ticket.findOne({
+      guildId: interaction.guild.id,
+      channelId: interaction.channel.id,
+      status: 'open'
+    });
+
+    if (!ticket) {
+      return interaction.reply({
+        content: 'Ticket não encontrado ou já fechado.',
+        ephemeral: true
+      });
+    }
+
+    const transcript = await buildTranscript(interaction.channel).catch(() => 'Não foi possível gerar transcript.');
+
+    ticket.status = 'closed';
+    ticket.closedBy = interaction.user.id;
+    ticket.closedAt = new Date();
+    ticket.transcript = transcript;
+    await ticket.save();
+
+    await interaction.reply({
+      content: 'Ticket fechado. Este canal será removido em 5 segundos.',
+      ephemeral: true
+    });
+
+    setTimeout(() => {
+      interaction.channel.delete('Ticket fechado').catch(() => {});
+    }, 5000);
+
+    return;
+  }
 if (interaction.isModalSubmit()) {
   if (interaction.customId === 'modal_editor') {
   const experiencia = interaction.fields.getTextInputValue('experiencia_editor');
