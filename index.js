@@ -74,6 +74,8 @@ const LINKS_OFICIAIS_CHANNEL_ID = "1508228460349358100";
 const TRADUTORES_CHANNEL_ID = "1508254732911644824";
 const REVISORES_CHANNEL_ID = "1508254657984856084";
 const EDITORES_CHANNEL_ID = "1508254961769779400";
+const PROBLEMAS_SITE_CHANNEL_ID = "1508234541544767611";
+const SITE_URL = "https://imusama-dev.github.io/noctra-site/index.html";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -539,6 +541,11 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  new SlashCommandBuilder()
+  .setName('problemassite')
+  .setDescription('Envia o painel de problemas no site')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
   new SlashCommandBuilder()
   .setName('editores')
   .setDescription('Envia o painel de recrutamento para editores e cleaners')
@@ -1037,6 +1044,49 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  if (interaction.customId === 'avisar_problema_site') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_problema_site')
+    .setTitle('Avisar problema no site');
+
+  const obraInput = new TextInputBuilder()
+    .setCustomId('obra_problema_site')
+    .setLabel('Nome da obra')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: Nome da obra com problema');
+
+  const capituloInput = new TextInputBuilder()
+    .setCustomId('capitulo_problema_site')
+    .setLabel('Capítulo ou página com erro')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false)
+    .setPlaceholder('Ex: Capítulo 12, página 4, página da obra...');
+
+  const problemaInput = new TextInputBuilder()
+    .setCustomId('descricao_problema_site')
+    .setLabel('Descreva o problema')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Explique o que aconteceu.');
+
+  const linkInput = new TextInputBuilder()
+    .setCustomId('link_problema_site')
+    .setLabel('Link, print ou detalhe extra')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false)
+    .setPlaceholder('Cole o link da página ou descreva algum detalhe extra.');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(obraInput),
+    new ActionRowBuilder().addComponents(capituloInput),
+    new ActionRowBuilder().addComponents(problemaInput),
+    new ActionRowBuilder().addComponents(linkInput)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
   
 if (interaction.customId === 'candidatura_editor') {
   const modal = new ModalBuilder()
@@ -1372,6 +1422,47 @@ if (interaction.customId === 'candidatura_editor') {
     
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_problema_site') {
+  const obra = interaction.fields.getTextInputValue('obra_problema_site');
+  const capitulo = interaction.fields.getTextInputValue('capitulo_problema_site') || 'Não informado.';
+  const problema = interaction.fields.getTextInputValue('descricao_problema_site');
+  const link = interaction.fields.getTextInputValue('link_problema_site') || 'Não informado.';
+
+  const channel = interaction.guild.channels.cache.get(PROBLEMAS_SITE_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de problemas no site não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#ef4444')
+    .setTitle('🛠️ Novo problema no site')
+    .setDescription(
+      `✦ **Avisado por:** ${interaction.user}\n\n` +
+      `❖ **Obra:**\n${obra}\n\n` +
+      `❖ **Capítulo/Página:**\n${capitulo}\n\n` +
+      `❖ **Problema:**\n${problema}\n\n` +
+      `❖ **Link/Print/Detalhe:**\n${link}`
+    )
+    .setFooter({
+      text: 'Noctra Core • Suporte do site'
+    })
+    .setTimestamp();
+
+  await channel.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Problema enviado com sucesso. Obrigado por avisar.',
+    ephemeral: true
+  });
+
+  return;
+}
   if (interaction.customId === 'modal_editor') {
   const experiencia = interaction.fields.getTextInputValue('experiencia_editor');
   const ferramenta = interaction.fields.getTextInputValue('ferramenta_editor');
@@ -2434,6 +2525,83 @@ await channel.send({
 
   await interaction.reply({
     content: `Painel de editores e cleaners enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
+    if (command === 'problemassite') {
+  const channel = interaction.guild.channels.cache.get(PROBLEMAS_SITE_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de problemas no site não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#ef4444')
+    .setTitle('🛠️ Problemas no site')
+    .setDescription(
+      `Encontrou algum erro no site da Noctra Core?\n` +
+      `Use este canal para avisar a staff e ajudar a manter a leitura funcionando corretamente.\n\n` +
+
+      `✦ **Site atual:**\n` +
+      `${SITE_URL}\n\n` +
+
+      `✦ **Você pode avisar sobre:**\n\n` +
+
+      `❖ imagens que não carregam\n` +
+      `❖ capítulos com páginas faltando\n` +
+      `❖ páginas fora de ordem\n` +
+      `❖ botão ou link quebrado\n` +
+      `❖ obra que não abre\n` +
+      `❖ capítulo que abre errado\n` +
+      `❖ erro no nome da obra ou capítulo\n` +
+      `❖ capa errada ou quebrada\n` +
+      `❖ site muito lento ou travando\n` +
+      `❖ problema no leitor pelo celular ou computador\n\n` +
+
+      `✦ **Como ajudar no aviso:**\n\n` +
+
+      `• diga o nome da obra\n` +
+      `• informe o capítulo com problema\n` +
+      `• explique o que aconteceu\n` +
+      `• envie print, se possível\n` +
+      `• diga se estava no celular ou computador\n` +
+      `• copie o link da página com erro, se conseguir\n\n` +
+
+      `❖ Quanto mais detalhes você enviar, mais rápido conseguimos corrigir.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Suporte do site`
+    )
+    .setFooter({
+      text: 'Noctra Core • Site'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('Abrir site')
+      .setStyle(ButtonStyle.Link)
+      .setURL(SITE_URL),
+
+    new ButtonBuilder()
+      .setCustomId('avisar_problema_site')
+      .setLabel('Avisar problema')
+      .setStyle(ButtonStyle.Danger)
+      .setEmoji('🛠️')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de problemas no site enviado em ${channel}.`,
     ephemeral: true
   });
 
