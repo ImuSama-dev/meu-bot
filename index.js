@@ -1958,7 +1958,55 @@ return;
     }
     
 if (command === 'pedidos') {
-  if (command === 'denuncias') {
+
+const channel = interaction.guild.channels.cache.get(pedidosChannelId);
+
+if (!channel) {
+  return interaction.reply({
+    content: 'Canal de pedidos não encontrado.',
+    ephemeral: true
+  });
+}
+
+const embed = new EmbedBuilder()
+.setColor('#111111')
+.setTitle('☾ Pedidos de Obras • Noctra Core')
+.setDescription(
+`✦ Aqui você pode enviar pedidos de obras Yuri/Yaoi para adicionarmos futuramente ao site.\n\n` +
+
+`❖ Antes de enviar, verifique se outra pessoa já não fez o mesmo pedido.\n\n` +
+
+`✦ Caso a obra já tenha sido solicitada, apenas aguarde até que ela seja adicionada ao site.\n\n` +
+
+`☾ Nossa equipe analisa todos os pedidos enviados.\n\n` +
+
+`────────────────────\n` +
+`Noctra Core • Sistema de Pedidos`
+)
+.setFooter({
+  text: 'Noctra Core'
+});
+
+const row = new ActionRowBuilder().addComponents(
+new ButtonBuilder()
+.setCustomId('abrir_pedido')
+.setLabel('Enviar pedido')
+.setStyle(ButtonStyle.Primary)
+);
+
+await channel.send({
+embeds: [embed],
+components: [row]
+});
+
+await interaction.reply({
+content: 'Painel de pedidos enviado.',
+ephemeral: true
+});
+
+return;
+}
+    if (command === 'denuncias') {
   const channel = interaction.guild.channels.cache.get(DENUNCIAS_CHANNEL_ID);
 
   if (!channel) {
@@ -2010,54 +2058,6 @@ if (command === 'pedidos') {
   });
 
   return;
-}
-
-const channel = interaction.guild.channels.cache.get(pedidosChannelId);
-
-if (!channel) {
-  return interaction.reply({
-    content: 'Canal de pedidos não encontrado.',
-    ephemeral: true
-  });
-}
-
-const embed = new EmbedBuilder()
-.setColor('#111111')
-.setTitle('☾ Pedidos de Obras • Noctra Core')
-.setDescription(
-`✦ Aqui você pode enviar pedidos de obras Yuri/Yaoi para adicionarmos futuramente ao site.\n\n` +
-
-`❖ Antes de enviar, verifique se outra pessoa já não fez o mesmo pedido.\n\n` +
-
-`✦ Caso a obra já tenha sido solicitada, apenas aguarde até que ela seja adicionada ao site.\n\n` +
-
-`☾ Nossa equipe analisa todos os pedidos enviados.\n\n` +
-
-`────────────────────\n` +
-`Noctra Core • Sistema de Pedidos`
-)
-.setFooter({
-  text: 'Noctra Core'
-});
-
-const row = new ActionRowBuilder().addComponents(
-new ButtonBuilder()
-.setCustomId('abrir_pedido')
-.setLabel('Enviar pedido')
-.setStyle(ButtonStyle.Primary)
-);
-
-await channel.send({
-embeds: [embed],
-components: [row]
-});
-
-await interaction.reply({
-content: 'Painel de pedidos enviado.',
-ephemeral: true
-});
-
-return;
 }
     if (command === 'sugestoes') {
 
