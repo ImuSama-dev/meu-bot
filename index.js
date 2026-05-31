@@ -68,6 +68,7 @@ const recrutamentoChannelId = '1502761123852849212';
 const SUGESTOES_CHANNEL_ID = "1508246866909986947";
 const DENUNCIAS_CHANNEL_ID = "1508246816993312828";
 const DENUNCIAS_STAFF_CHANNEL_ID = "1510609309916987442";
+const COMO_AJUDAR_CHANNEL_ID = "1508254799345356991";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -685,6 +686,11 @@ new SlashCommandBuilder()
 new SlashCommandBuilder()
   .setName('pedidos')
   .setDescription('Envia o painel de pedidos')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
+  new SlashCommandBuilder()
+  .setName('comoajudar')
+  .setDescription('Envia o painel de como ajudar a Noctra Core')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   
   new SlashCommandBuilder()
@@ -2008,7 +2014,83 @@ return;
       await interaction.reply({ content: 'Painel de ticket enviado.', ephemeral: true });
       return;
     }
-    
+ if (command === 'comoajudar') {
+  const channel = interaction.guild.channels.cache.get(COMO_AJUDAR_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de como ajudar não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('📌 Como ajudar a Noctra Core')
+    .setDescription(
+      `A Noctra Core cresce com a ajuda de cada membro da comunidade.\n` +
+      `Mesmo pequenas ações fazem diferença para manter o servidor ativo, organizado e cheio de novidades.\n\n` +
+
+      `✦ **Formas de ajudar:**\n\n` +
+
+      `❖ **Indique obras**\n` +
+      `Conhece algum Yuri, Yaoi, GL ou BL que ainda não está no site?\n` +
+      `Envie sua sugestão no canal de pedidos.\n\n` +
+
+      `❖ **Reporte problemas**\n` +
+      `Encontrou capítulo com erro, imagem quebrada, link errado ou página com problema?\n` +
+      `Avise a staff para corrigirmos o quanto antes.\n\n` +
+
+      `❖ **Envie sugestões**\n` +
+      `Ideias para melhorar o site, o servidor, os canais ou os sistemas são sempre bem-vindas.\n\n` +
+
+      `❖ **Divulgue a Noctra**\n` +
+      `Convide amigos que gostam de leitura, manhwas, mangás e novels.\n` +
+      `Quanto mais leitores, mais viva a comunidade fica.\n\n` +
+
+      `❖ **Participe do servidor**\n` +
+      `Comente, reaja às postagens, participe das conversas e ajude a manter o ambiente acolhedor.\n\n` +
+
+      `❖ **Ajude a equipe**\n` +
+      `Se você sabe traduzir, revisar, editar, limpar páginas ou organizar conteúdos, veja os canais de recrutamento.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Toda ajuda fortalece a comunidade`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('Fazer pedido')
+      .setStyle(ButtonStyle.Link)
+      .setURL('https://discord.com/channels/1334696250070663231/1503133804477419530'),
+
+    new ButtonBuilder()
+      .setLabel('Enviar sugestão')
+      .setStyle(ButtonStyle.Link)
+      .setURL('https://discord.com/channels/1334696250070663231/1508246866909986947'),
+
+    new ButtonBuilder()
+      .setLabel('Candidatar-se')
+      .setStyle(ButtonStyle.Link)
+      .setURL('https://discord.com/channels/1334696250070663231/1502761123852849212')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de como ajudar enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}   
 if (command === 'pedidos') {
 
 const channel = interaction.guild.channels.cache.get(pedidosChannelId);
