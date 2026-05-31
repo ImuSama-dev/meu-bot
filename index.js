@@ -69,6 +69,7 @@ const SUGESTOES_CHANNEL_ID = "1508246866909986947";
 const DENUNCIAS_CHANNEL_ID = "1508246816993312828";
 const DENUNCIAS_STAFF_CHANNEL_ID = "1510609309916987442";
 const COMO_AJUDAR_CHANNEL_ID = "1508254799345356991";
+const COMO_LER_CHANNEL_ID = "1508228386361970859";
 
 if (!token || !mongoUrl || !clientId) {
   console.log('Preencha TOKEN, MONGO_URL e CLIENT_ID no arquivo .env');
@@ -534,6 +535,12 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  
+  new SlashCommandBuilder()
+  .setName('comoler')
+  .setDescription('Envia o painel de como ler no site')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
   new SlashCommandBuilder()
     .setName('ping')
     .setDescription('Verifica se o bot esta online.'),
@@ -2139,6 +2146,67 @@ ephemeral: true
 });
 
 return;
+}
+    if (command === 'comoler') {
+  const channel = interaction.guild.channels.cache.get(COMO_LER_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de como ler no site não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const siteUrl = 'https://imusama-dev.github.io/noctra-site/index.html';
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('❓ Como ler no site da Noctra Core')
+    .setDescription(
+      `A leitura das obras da Noctra Core é feita pelo nosso site oficial atual.\n\n` +
+
+      `✦ **Acesse o site:**\n` +
+      `${siteUrl}\n\n` +
+
+      `❖ **Como começar a ler:**\n` +
+      `1. Entre no site pelo botão abaixo ou pelo link acima.\n` +
+      `2. Escolha a obra que deseja ler.\n` +
+      `3. Abra a página da obra.\n` +
+      `4. Selecione o capítulo disponível.\n` +
+      `5. Boa leitura.\n\n` +
+
+      `❖ **Se algo não carregar:**\n` +
+      `Atualize a página, tente novamente após alguns segundos ou avise a staff caso o problema continue.\n\n` +
+
+      `❖ **Importante:**\n` +
+      `O site ainda usa o link do GitHub Pages enquanto o domínio .com não está ativo.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Sistema de leitura`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('Abrir site')
+      .setStyle(ButtonStyle.Link)
+      .setURL(siteUrl)
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de como ler no site enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
 }
     if (command === 'denuncias') {
   const channel = interaction.guild.channels.cache.get(DENUNCIAS_CHANNEL_ID);
