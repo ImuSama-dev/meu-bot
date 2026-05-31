@@ -540,6 +540,11 @@ async function buildTranscript(channel) {
 // ================= COMANDOS =================
 const commands = [
   
+ new SlashCommandBuilder()
+  .setName('revisores')
+  .setDescription('Envia o painel de recrutamento para revisores')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
   new SlashCommandBuilder()
   .setName('tradutores')
   .setDescription('Envia o painel de recrutamento para tradutores')
@@ -1028,6 +1033,49 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  if (interaction.customId === 'candidatura_revisor') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_revisor')
+    .setTitle('Candidatura para revisor');
+
+  const experienciaInput = new TextInputBuilder()
+    .setCustomId('experiencia_revisor')
+    .setLabel('Você já revisou textos antes?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Conte se já revisou obras, textos, trabalhos ou se quer aprender.');
+
+  const portuguesInput = new TextInputBuilder()
+    .setCustomId('portugues_revisor')
+    .setLabel('Como é sua relação com português?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Ex: gosto de gramática, percebo erros, tenho facilidade com escrita...');
+
+  const disponibilidadeInput = new TextInputBuilder()
+    .setCustomId('disponibilidade_revisor')
+    .setLabel('Qual sua disponibilidade?')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: finais de semana, à noite, algumas horas por semana.');
+
+  const motivoInput = new TextInputBuilder()
+    .setCustomId('motivo_revisor')
+    .setLabel('Por que deseja ajudar como revisor?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setPlaceholder('Fale um pouco sobre seu interesse.');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(experienciaInput),
+    new ActionRowBuilder().addComponents(portuguesInput),
+    new ActionRowBuilder().addComponents(disponibilidadeInput),
+    new ActionRowBuilder().addComponents(motivoInput)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
   
   if (interaction.customId === 'candidatura_tradutor') {
   const modal = new ModalBuilder()
@@ -1236,6 +1284,47 @@ if (interaction.isButton()) {
   }
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_revisor') {
+  const experiencia = interaction.fields.getTextInputValue('experiencia_revisor');
+  const portugues = interaction.fields.getTextInputValue('portugues_revisor');
+  const disponibilidade = interaction.fields.getTextInputValue('disponibilidade_revisor');
+  const motivo = interaction.fields.getTextInputValue('motivo_revisor');
+
+  const canal = interaction.guild.channels.cache.get(recrutamentoChannelId);
+
+  if (!canal) {
+    return interaction.reply({
+      content: 'Canal de recrutamento não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#f59e0b')
+    .setTitle('✍️ Nova candidatura para revisor')
+    .setDescription(
+      `✦ **Candidato:** ${interaction.user}\n\n` +
+      `❖ **Experiência:**\n${experiencia}\n\n` +
+      `❖ **Português:**\n${portugues}\n\n` +
+      `❖ **Disponibilidade:**\n${disponibilidade}\n\n` +
+      `❖ **Motivo:**\n${motivo}`
+    )
+    .setFooter({
+      text: 'Noctra Core • Recrutamento'
+    })
+    .setTimestamp();
+
+  await canal.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: 'Sua candidatura para revisor foi enviada com sucesso.',
+    ephemeral: true
+  });
+
+  return;
+}
   
   if (interaction.customId === 'modal_tradutor') {
   const idioma = interaction.fields.getTextInputValue('idioma_tradutor');
@@ -2190,7 +2279,70 @@ return;
   });
 
   return;
-}   
+} 
+    if (command === 'revisores') {
+  const channel = interaction.guild.channels.cache.get(REVISORES_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de revisores não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('✍️ Revisores • Noctra Core')
+    .setDescription(
+      `Este canal é voltado para quem deseja ajudar a Noctra Core revisando capítulos antes da publicação.\n\n` +
+
+      `✦ **O que um revisor faz?**\n\n` +
+
+      `❖ Corrige erros de português, digitação e pontuação.\n` +
+      `❖ Ajusta frases para deixar a leitura mais natural.\n` +
+      `❖ Confere se o texto está claro e bem organizado.\n` +
+      `❖ Ajuda a manter o padrão de qualidade das obras.\n` +
+      `❖ Trabalha junto com tradutores e editores.\n\n` +
+
+      `✦ **Requisitos:**\n\n` +
+
+      `• Ter boa leitura e escrita em português.\n` +
+      `• Ter atenção aos detalhes.\n` +
+      `• Gostar de revisar textos com calma.\n` +
+      `• Ser responsável com prazos.\n` +
+      `• Ter vontade de aprender e ajudar a equipe.\n\n` +
+
+      `❖ **Não precisa ter experiência profissional.**\n` +
+      `Se você nunca revisou capítulos antes, nós ensinamos sem problemas. O mais importante é ter cuidado com o texto, paciência e compromisso com a equipe.\n\n` +
+
+      `────────────────────\n` +
+      `Noctra Core • Recrutamento de revisores`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('candidatura_revisor')
+      .setLabel('Candidatar-se para revisor')
+      .setStyle(ButtonStyle.Primary)
+      .setEmoji('✍️')
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de revisores enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
     if (command === 'tradutores') {
   const channel = interaction.guild.channels.cache.get(TRADUTORES_CHANNEL_ID);
 
