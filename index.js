@@ -536,6 +536,10 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  new SlashCommandBuilder()
+  .setName('links')
+  .setDescription('Envia o painel de links oficiais')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   
   new SlashCommandBuilder()
   .setName('comoler')
@@ -2099,6 +2103,53 @@ return;
 
   return;
 }   
+    if (command === 'links') {
+  const channel = interaction.guild.channels.cache.get(LINKS_OFICIAIS_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de links oficiais não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const siteUrl = 'https://imusama-dev.github.io/noctra-site/index.html';
+
+  const embed = new EmbedBuilder()
+    .setColor('#111111')
+    .setTitle('🔗 Links oficiais')
+    .setDescription(
+      `Aqui ficam os links oficiais da Noctra Core.\n\n` +
+      `✦ **Site oficial atual:**\n` +
+      `${siteUrl}\n\n` +
+      `❖ Use apenas os links enviados neste canal para acessar a Noctra com segurança.\n\n` +
+      `────────────────────\n` +
+      `Noctra Core • Links oficiais`
+    )
+    .setFooter({
+      text: 'Noctra Core'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('Abrir site')
+      .setStyle(ButtonStyle.Link)
+      .setURL(siteUrl)
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel de links oficiais enviado em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
 if (command === 'pedidos') {
 
 const channel = interaction.guild.channels.cache.get(pedidosChannelId);
