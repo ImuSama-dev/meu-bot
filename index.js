@@ -1010,21 +1010,128 @@ client.on('channelDelete', async (channel) => {
   await sendLog(channel.guild, 'Canal deletado', `${channel.name} foi deletado.`, '#ed4245');
 });
 
+const mensagensCargosEquipe = {
+  "1502737004239257781": {
+    nome: "Revisor",
+    mensagem: `Olá! Tudo bem? 😊
+
+Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para mantermos a qualidade das obras publicadas. 💜
+
+Sua função será revisar os capítulos antes do lançamento. Caso você não se sinta confortável revisando obras +18, é só me avisar que organizamos isso sem problema algum.
+
+Como funciona a revisão:
+
+• Leia o capítulo com atenção.
+• Verifique erros de português, digitação, pontuação e concordância.
+• Veja se alguma frase ficou estranha ou pouco natural.
+• Caso encontre algum erro, você mesmo pode corrigir apenas a parte necessária na imagem e depois me enviar o capítulo corrigido.
+• Se preferir, também pode apenas me informar os erros encontrados para que eu faça as correções.
+• Se não houver nenhum erro, basta me avisar que o capítulo foi revisado e está aprovado para publicação.
+
+O trabalho é bem simples e não exige experiência profissional. O mais importante é ter atenção aos detalhes e ajudar a manter a qualidade das traduções.
+
+Sempre que tiver alguma dúvida, dificuldade ou sugestão, pode falar comigo sem receio.
+
+Seja bem-vindo(a) à Noctra Core! 🌙`
+  },
+
+  "1334697553647632475": {
+    nome: "Tradutor",
+    mensagem: `Olá! Tudo bem? 😊
+
+Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para que mais obras cheguem aos leitores. 💜
+
+Sua função será traduzir os capítulos enviados pela equipe da Noctra Core.
+
+Trabalhamos principalmente com obras Yuri e Yaoi, e algumas podem ser +18. Caso você não se sinta confortável traduzindo obras +18, é só me avisar que organizamos isso sem problema algum.
+
+Como funciona a tradução:
+
+• A equipe envia o capítulo para você.
+• Você traduz as falas com atenção.
+• Tente manter o sentido original da frase.
+• Evite traduções muito robóticas.
+• Se tiver dúvida em alguma fala, pode me perguntar.
+• Caso não consiga limpar falas fora dos balões, não tem problema, me avise.
+• Depois de finalizar, envie o capítulo traduzido para a equipe.
+
+Não precisa ter experiência profissional. O mais importante é traduzir com cuidado, paciência e compromisso.
+
+Seja bem-vindo(a) à Noctra Core! 🌙`
+  },
+
+  "1502737356674044018": {
+    nome: "Editor",
+    mensagem: `Olá! Tudo bem? 😊
+
+Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para deixar os capítulos bonitos, organizados e prontos para publicação. 💜
+
+Sua função será ajudar na edição dos capítulos, como limpeza de balões, organização das falas e ajustes visuais quando necessário.
+
+Como funciona a edição:
+
+• A equipe envia o capítulo ou as páginas que precisam de edição.
+• Você limpa as falas antigas sem danificar o desenho.
+• Depois coloca o texto traduzido no local correto.
+• Tente manter a leitura bonita, clara e confortável.
+• Se alguma parte for difícil de limpar, pode me avisar.
+• Se tiver dúvida sobre fonte, tamanho ou posição do texto, pode perguntar.
+
+Não precisa ter experiência profissional. O mais importante é ter paciência, cuidado e vontade de aprender.
+
+Seja bem-vindo(a) à Noctra Core! 🌙`
+  }
+};
+
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
   const oldRoles = new Set(oldMember.roles.cache.keys());
   const newRoles = new Set(newMember.roles.cache.keys());
+
   const added = [...newRoles].filter(id => !oldRoles.has(id));
   const removed = [...oldRoles].filter(id => !newRoles.has(id));
 
   if (added.length) {
-    await sendLog(newMember.guild, 'Cargo adicionado', `${newMember} recebeu ${added.map(id => `<@&${id}>`).join(', ')}.`, '#57f287');
+    await sendLog(
+      newMember.guild,
+      'Cargo adicionado',
+      `${newMember} recebeu ${added.map(id => `<@&${id}>`).join(', ')}.`,
+      '#57f287'
+    );
+
+    for (const cargoId of added) {
+      const dados = mensagensCargosEquipe[cargoId];
+
+      if (dados) {
+        try {
+          await newMember.send(dados.mensagem);
+
+          await sendLog(
+            newMember.guild,
+            'Mensagem privada enviada',
+            `Enviei as instruções de **${dados.nome}** para ${newMember}.`,
+            '#a855f7'
+          );
+        } catch (error) {
+          await sendLog(
+            newMember.guild,
+            'Não consegui enviar mensagem privada',
+            `Não consegui enviar a DM de **${dados.nome}** para ${newMember}. A pessoa pode estar com o privado fechado.`,
+            '#ff5555'
+          );
+        }
+      }
+    }
   }
 
   if (removed.length) {
-    await sendLog(newMember.guild, 'Cargo removido', `${newMember} perdeu ${removed.map(id => `<@&${id}>`).join(', ')}.`, '#ed4245');
+    await sendLog(
+      newMember.guild,
+      'Cargo removido',
+      `${newMember} perdeu ${removed.map(id => `<@&${id}>`).join(', ')}.`,
+      '#ed4245'
+    );
   }
 });
-
 // ================= INTERACOES =================
 client.on('interactionCreate', async (interaction) => {
   try {
