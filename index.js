@@ -1013,7 +1013,18 @@ client.on('channelDelete', async (channel) => {
 const mensagensCargosEquipe = {
   "1502737004239257781": {
     nome: "Revisor",
-    mensagem: `Olá! Tudo bem? 😊
+    mensagem: `🌙 Mensagem Automática • Noctra Core
+
+Olá! Tudo bem? 😊
+
+Você recebeu esta mensagem automaticamente porque passou a fazer parte da equipe da Noctra Core.
+
+⚠️ Importante:
+Esta mensagem foi enviada pela Mimi, a assistente oficial da Noctra Core.
+
+A Mimi não responde mensagens privadas e não oferece suporte direto. Caso tenha dúvidas, dificuldades ou precise de ajuda, utilize o contato informado ao final desta mensagem.
+
+────────────────────────────
 
 Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para mantermos a qualidade das obras publicadas. 💜
 
@@ -1030,10 +1041,8 @@ Como funciona a revisão:
 
 O trabalho é bem simples e não exige experiência profissional. O mais importante é ter atenção aos detalhes e ajudar a manter a qualidade das traduções.
 
-Sempre que tiver alguma dúvida, dificuldade ou sugestão, pode falar comigo sem receio.
+────────────────────────────
 
-Seja bem-vindo(a) à Noctra Core! 🌙
-────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
 ❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
 
 👤 Responsável pela Noctra Core:
@@ -1041,12 +1050,25 @@ Seja bem-vindo(a) à Noctra Core! 🌙
 
 Também estou disponível no servidor para ajudar no que for necessário.
 
+⚠️ Lembre-se: a Mimi não responde mensagens privadas.
+
 A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   },
 
   "1334697553647632475": {
     nome: "Tradutor",
-    mensagem: `Olá! Tudo bem? 😊
+    mensagem: `🌙 Mensagem Automática • Noctra Core
+
+Olá! Tudo bem? 😊
+
+Você recebeu esta mensagem automaticamente porque passou a fazer parte da equipe da Noctra Core.
+
+⚠️ Importante:
+Esta mensagem foi enviada pela Mimi, a assistente oficial da Noctra Core.
+
+A Mimi não responde mensagens privadas e não oferece suporte direto. Caso tenha dúvidas, dificuldades ou precise de ajuda, utilize o contato informado ao final desta mensagem.
+
+────────────────────────────
 
 Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para que mais obras cheguem aos leitores. 💜
 
@@ -1066,9 +1088,8 @@ Como funciona a tradução:
 
 Não precisa ter experiência profissional. O mais importante é traduzir com cuidado, paciência e compromisso.
 
-Seja bem-vindo(a) à Noctra Core! 🌙
+────────────────────────────
 
-────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
 ❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
 
 👤 Responsável pela Noctra Core:
@@ -1076,12 +1097,25 @@ Seja bem-vindo(a) à Noctra Core! 🌙
 
 Também estou disponível no servidor para ajudar no que for necessário.
 
+⚠️ Lembre-se: a Mimi não responde mensagens privadas.
+
 A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   },
 
   "1502737356674044018": {
     nome: "Editor",
-    mensagem: `Olá! Tudo bem? 😊
+    mensagem: `🌙 Mensagem Automática • Noctra Core
+
+Olá! Tudo bem? 😊
+
+Você recebeu esta mensagem automaticamente porque passou a fazer parte da equipe da Noctra Core.
+
+⚠️ Importante:
+Esta mensagem foi enviada pela Mimi, a assistente oficial da Noctra Core.
+
+A Mimi não responde mensagens privadas e não oferece suporte direto. Caso tenha dúvidas, dificuldades ou precise de ajuda, utilize o contato informado ao final desta mensagem.
+
+────────────────────────────
 
 Antes de tudo, muito obrigada por se juntar à equipe da Noctra Core e ajudar no projeto. Sua ajuda é muito importante para deixar os capítulos bonitos, organizados e prontos para publicação. 💜
 
@@ -1098,15 +1132,16 @@ Como funciona a edição:
 
 Não precisa ter experiência profissional. O mais importante é ter paciência, cuidado e vontade de aprender.
 
-Seja bem-vindo(a) à Noctra Core! 🌙
+────────────────────────────
 
-────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
 ❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
 
 👤 Responsável pela Noctra Core:
 <@690358896312713217>
 
 Também estou disponível no servidor para ajudar no que for necessário.
+
+⚠️ Lembre-se: a Mimi não responde mensagens privadas.
 
 A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   }
