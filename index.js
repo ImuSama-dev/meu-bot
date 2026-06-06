@@ -75,7 +75,8 @@ const TRADUTORES_CHANNEL_ID = "1508254732911644824";
 const REVISORES_CHANNEL_ID = "1508254657984856084";
 const EDITORES_CHANNEL_ID = "1508254961769779400";
 const CRIAR_SORTEIOS_CHANNEL_ID = "1512924897628782652";
-const SORTEIOS_CHANNEL_ID = "1512928499327832184";
+const AVISOS_SORTEIOS_CHANNEL_ID = "1512928499327832184";
+const SORTEIOS_CHANNEL_ID = "1512938814023401672";
 const PROBLEMAS_SITE_CHANNEL_ID = "1508234541544767611";
 const SITE_URL = "https://imusama-dev.github.io/noctra-site/index.html";
 
@@ -543,6 +544,10 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  new SlashCommandBuilder()
+  .setName('painel-sorteios')
+  .setDescription('Envia o painel de avisos e sorteios')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
   
   new SlashCommandBuilder()
   .setName('sorteios')
@@ -1223,6 +1228,78 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  if (interaction.customId === 'participar_sorteio') {
+  return interaction.reply({
+    content: '🎁 Sua participação foi registrada! Boa sorte. 💜',
+    ephemeral: true
+  });
+}
+  if (interaction.customId === 'criar_aviso_sorteio') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_aviso_sorteio')
+    .setTitle('Criar aviso de sorteio');
+
+  const titulo = new TextInputBuilder()
+    .setCustomId('titulo_aviso_sorteio')
+    .setLabel('Título do aviso')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const texto = new TextInputBuilder()
+    .setCustomId('texto_aviso_sorteio')
+    .setLabel('Mensagem do aviso')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(titulo),
+    new ActionRowBuilder().addComponents(texto)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
+
+if (interaction.customId === 'criar_sorteio_oficial') {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_sorteio_oficial')
+    .setTitle('Criar sorteio oficial');
+
+  const titulo = new TextInputBuilder()
+    .setCustomId('titulo_sorteio_oficial')
+    .setLabel('Título do sorteio')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const premio = new TextInputBuilder()
+    .setCustomId('premio_sorteio_oficial')
+    .setLabel('Prêmio')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const descricao = new TextInputBuilder()
+    .setCustomId('descricao_sorteio_oficial')
+    .setLabel('Descrição / regras')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  const encerramento = new TextInputBuilder()
+    .setCustomId('encerramento_sorteio_oficial')
+    .setLabel('Data de encerramento')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setPlaceholder('Ex: 20/06 às 20h');
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(titulo),
+    new ActionRowBuilder().addComponents(premio),
+    new ActionRowBuilder().addComponents(descricao),
+    new ActionRowBuilder().addComponents(encerramento)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
   if (interaction.customId === 'criar_sorteio') {
 
   const modal = new ModalBuilder()
@@ -1627,6 +1704,89 @@ if (interaction.customId === 'candidatura_editor') {
     
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_aviso_sorteio') {
+  const titulo = interaction.fields.getTextInputValue('titulo_aviso_sorteio');
+  const texto = interaction.fields.getTextInputValue('texto_aviso_sorteio');
+
+  const channel = interaction.guild.channels.cache.get(AVISOS_SORTEIOS_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de avisos de sorteios não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle(titulo)
+    .setDescription(texto)
+    .setFooter({
+      text: 'Noctra Core • Avisos de Sorteios'
+    })
+    .setTimestamp();
+
+  await channel.send({
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: `Aviso enviado com sucesso em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
+
+if (interaction.customId === 'modal_sorteio_oficial') {
+  const titulo = interaction.fields.getTextInputValue('titulo_sorteio_oficial');
+  const premio = interaction.fields.getTextInputValue('premio_sorteio_oficial');
+  const descricao = interaction.fields.getTextInputValue('descricao_sorteio_oficial');
+  const encerramento = interaction.fields.getTextInputValue('encerramento_sorteio_oficial');
+
+  const channel = interaction.guild.channels.cache.get(SORTEIOS_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de sorteios não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle(`🎁 ${titulo}`)
+    .setDescription(
+      `🏆 **Prêmio:**\n${premio}\n\n` +
+      `📜 **Descrição / Regras:**\n${descricao}\n\n` +
+      `⏰ **Encerramento:**\n${encerramento}\n\n` +
+      `✨ **Participação exclusiva para Boosters da Noctra Core.**`
+    )
+    .setFooter({
+      text: 'Noctra Core • Sorteio Oficial'
+    })
+    .setTimestamp();
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('participar_sorteio')
+      .setLabel('Participar')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Success)
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Sorteio enviado com sucesso em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
   if (interaction.customId === 'modal_sorteio') {
   const titulo = interaction.fields.getTextInputValue('titulo_sorteio');
   const texto = interaction.fields.getTextInputValue('texto_sorteio');
@@ -2525,7 +2685,42 @@ await interaction.reply({
 
 return;
 }
-    
+if (command === 'painel-sorteios') {
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle('🎁 Sistema de Sorteios • Noctra Core')
+    .setDescription(
+      `Use os botões abaixo para publicar avisos ou sorteios oficiais.\n\n` +
+      `📢 **Criar Aviso:** publica no canal de avisos dos sorteios, sem botão de participar.\n` +
+      `🎁 **Criar Sorteio:** publica no canal de sorteios com botão de participação.`
+    );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('criar_aviso_sorteio')
+      .setLabel('Criar Aviso')
+      .setEmoji('📢')
+      .setStyle(ButtonStyle.Secondary),
+
+    new ButtonBuilder()
+      .setCustomId('criar_sorteio_oficial')
+      .setLabel('Criar Sorteio')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  await interaction.channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: 'Painel de sorteios enviado.',
+    ephemeral: true
+  });
+
+  return;
+}    
   if (command === 'top') {
     const top = await XP.find({ guildId: interaction.guild.id }).sort({ level: -1, xp: -1 }).limit(10);
       let desc = '🏆 Top da Noctra\n\n';
