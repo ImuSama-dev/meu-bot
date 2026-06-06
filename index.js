@@ -1032,7 +1032,16 @@ O trabalho é bem simples e não exige experiência profissional. O mais importa
 
 Sempre que tiver alguma dúvida, dificuldade ou sugestão, pode falar comigo sem receio.
 
-Seja bem-vindo(a) à Noctra Core! 🌙`
+Seja bem-vindo(a) à Noctra Core! 🌙
+────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
+❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
+
+👤 Responsável pela Noctra Core:
+<@690358896312713217>
+
+Também estou disponível no servidor para ajudar no que for necessário.
+
+A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   },
 
   "1334697553647632475": {
@@ -1057,7 +1066,17 @@ Como funciona a tradução:
 
 Não precisa ter experiência profissional. O mais importante é traduzir com cuidado, paciência e compromisso.
 
-Seja bem-vindo(a) à Noctra Core! 🌙`
+Seja bem-vindo(a) à Noctra Core! 🌙
+
+────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
+❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
+
+👤 Responsável pela Noctra Core:
+<@690358896312713217>
+
+Também estou disponível no servidor para ajudar no que for necessário.
+
+A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   },
 
   "1502737356674044018": {
@@ -1079,7 +1098,17 @@ Como funciona a edição:
 
 Não precisa ter experiência profissional. O mais importante é ter paciência, cuidado e vontade de aprender.
 
-Seja bem-vindo(a) à Noctra Core! 🌙`
+Seja bem-vindo(a) à Noctra Core! 🌙
+
+────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────────୨ৎ────
+❖ Qualquer dúvida, dificuldade ou sugestão, pode falar diretamente comigo.
+
+👤 Responsável pela Noctra Core:
+<@690358896312713217>
+
+Também estou disponível no servidor para ajudar no que for necessário.
+
+A Noctra Core ainda está crescendo, então toda ajuda faz uma enorme diferença. Muito obrigada por fazer parte da equipe. 💜🌙`
   }
 };
 
