@@ -955,7 +955,7 @@ client.on('messageCreate', async (msg) => {
       return;
     }
 
-    if (msg.content.length > config.automod.maxLength) {
+    if (false && msg.content.length > config.automod.maxLength) {
       await msg.delete().catch(() => {});
       await sendLog(msg.guild, 'Mensagem apagada', `${msg.author} enviou mensagem longa demais em ${msg.channel}.`, '#faa61a');
       return;
