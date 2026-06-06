@@ -74,6 +74,8 @@ const LINKS_OFICIAIS_CHANNEL_ID = "1508228460349358100";
 const TRADUTORES_CHANNEL_ID = "1508254732911644824";
 const REVISORES_CHANNEL_ID = "1508254657984856084";
 const EDITORES_CHANNEL_ID = "1508254961769779400";
+const CRIAR_SORTEIOS_CHANNEL_ID = "1512924897628782652";
+const SORTEIOS_CHANNEL_ID = "1512928499327832184";
 const PROBLEMAS_SITE_CHANNEL_ID = "1508234541544767611";
 const SITE_URL = "https://imusama-dev.github.io/noctra-site/index.html";
 
@@ -541,6 +543,12 @@ async function buildTranscript(channel) {
 
 // ================= COMANDOS =================
 const commands = [
+  
+  new SlashCommandBuilder()
+  .setName('sorteios')
+  .setDescription('Envia o painel de criação de sorteios')
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+  
   new SlashCommandBuilder()
   .setName('problemassite')
   .setDescription('Envia o painel de problemas no site')
@@ -1215,6 +1223,32 @@ client.on('interactionCreate', async (interaction) => {
     }
 
 if (interaction.isButton()) {
+  if (interaction.customId === 'criar_sorteio') {
+
+  const modal = new ModalBuilder()
+    .setCustomId('modal_sorteio')
+    .setTitle('Criar anúncio de sorteio');
+
+  const titulo = new TextInputBuilder()
+    .setCustomId('titulo_sorteio')
+    .setLabel('Título')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const texto = new TextInputBuilder()
+    .setCustomId('texto_sorteio')
+    .setLabel('Mensagem')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(titulo),
+    new ActionRowBuilder().addComponents(texto)
+  );
+
+  await interaction.showModal(modal);
+  return;
+}
   if (interaction.customId === 'avisar_problema_site') {
   const modal = new ModalBuilder()
     .setCustomId('modal_problema_site')
@@ -3243,6 +3277,55 @@ if (command === 'comoler') {
 
   await interaction.reply({
     content: 'Painel de sugestões enviado.',
+    ephemeral: true
+  });
+
+  return;
+}
+    if (command === 'sorteios') {
+
+  const channel = interaction.guild.channels.cache.get(
+    CRIAR_SORTEIOS_CHANNEL_ID
+  );
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de criação de sorteios não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle('🎁 Sistema de Sorteios')
+    .setDescription(
+      `Crie anúncios de sorteios para os boosters da Noctra Core.\n\n` +
+
+      `✨ Apenas membros com o cargo de Booster poderão participar.\n\n` +
+
+      `🎉 O primeiro sorteio será realizado quando a comunidade atingir 100 membros.\n\n` +
+
+      `Use o botão abaixo para criar anúncios e avisos para o canal de sorteios.`
+    )
+    .setFooter({
+      text: 'Noctra Core • Sorteios'
+    });
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('criar_sorteio')
+      .setLabel('Criar anúncio')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  await channel.send({
+    embeds: [embed],
+    components: [row]
+  });
+
+  await interaction.reply({
+    content: `Painel enviado em ${channel}.`,
     ephemeral: true
   });
 
