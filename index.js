@@ -856,16 +856,16 @@ client.on('guildMemberAdd', async (member) => {
 
   const channel = member.guild.channels.cache.get(config.welcomeChannelId);
   if (channel) {
-    const mensagens = [
-      `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
-      `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
-      `❖ ${member} .setColor('#9333ea')
-      .setDescription(pick(menentrou na **Noctra Core**.`
-    ];
+const mensagens = [
+  `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
+  `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
+  `❖ ${member} entrou na **Noctra Core**.`
+];
 
-    const embed = new EmbedBuilder()
-      sagens))
-      .setImage(pick(gifsEntrada));
+const embed = new EmbedBuilder()
+  .setColor('#9333ea')
+  .setDescription(pick(mensagens))
+  .setImage(pick(gifsEntrada));
 
     channel.send({ embeds: [embed] }).catch(() => {});
   }
