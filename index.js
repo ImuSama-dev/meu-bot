@@ -859,12 +859,12 @@ client.on('guildMemberAdd', async (member) => {
     const mensagens = [
       `✦ ${member}, foi marcado pela escuridão da **Noctra Core**.\n❖ Não há saída.\n☾ Não há luz.`,
       `✧ ${member}, despertou no vazio...\n☾ Não há volta agora.`,
-      `❖ ${member} entrou na **Noctra Core**.`
+      `❖ ${member} .setColor('#9333ea')
+      .setDescription(pick(menentrou na **Noctra Core**.`
     ];
 
     const embed = new EmbedBuilder()
-      .setColor('#2b2d31')
-      .setDescription(pick(mensagens))
+      sagens))
       .setImage(pick(gifsEntrada));
 
     channel.send({ embeds: [embed] }).catch(() => {});
@@ -2013,7 +2013,7 @@ return;
         : 'Nenhum warn ativo.';
 
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setTitle(`Warns de ${user.tag}`)
         .setDescription(description);
 
@@ -2047,7 +2047,7 @@ return;
       const bar = '█'.repeat(progress) + '░'.repeat(10 - progress);
 
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setDescription(`${user}\n\n✦ Nivel: ${data.level}\n✦ XP: ${data.xp} / ${needed}\n\n${bar}`);
 
       await interaction.reply({ embeds: [embed] });
@@ -2523,7 +2523,7 @@ return;
     if (command === 'avatar') {
       const user = interaction.options.getUser('usuario') || interaction.user;
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setTitle(`Avatar de ${user.username}`)
         .setImage(user.displayAvatarURL({ size: 1024 }));
 
@@ -2536,7 +2536,7 @@ return;
       const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setTitle(user.tag)
         .setThumbnail(user.displayAvatarURL())
         .addFields(
@@ -2551,7 +2551,7 @@ return;
 
     if (command === 'serverinfo') {
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setTitle(interaction.guild.name)
         .setThumbnail(interaction.guild.iconURL())
         .addFields(
@@ -3262,7 +3262,7 @@ if (command === 'comoler') {
         .addOptions(roles.map(role => ({ label: role.name, value: role.id })));
 
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31')
+        .setColor('#9333ea')
         .setTitle('Cargos')
         .setDescription('Selecione os cargos que deseja receber.');
 
