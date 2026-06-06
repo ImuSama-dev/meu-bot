@@ -1627,6 +1627,46 @@ if (interaction.customId === 'candidatura_editor') {
     
 }
 if (interaction.isModalSubmit()) {
+  if (interaction.customId === 'modal_sorteio') {
+  const titulo = interaction.fields.getTextInputValue('titulo_sorteio');
+  const texto = interaction.fields.getTextInputValue('texto_sorteio');
+
+  const channel = interaction.guild.channels.cache.get(SORTEIOS_CHANNEL_ID);
+
+  if (!channel) {
+    return interaction.reply({
+      content: 'Canal de sorteios não encontrado.',
+      ephemeral: true
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor('#a855f7')
+    .setTitle(`🎁 ${titulo}`)
+    .setDescription(
+      `${texto}\n\n` +
+      `────────────────────\n` +
+      `✨ **Atenção:** os sorteios da Noctra Core são exclusivos para membros Booster.\n` +
+      `🎉 O primeiro sorteio oficial será realizado quando a Noctra Core atingir **100 membros**.`
+    )
+    .setImage('https://i.ibb.co/qMVSNtb3/imagem-2026-06-06-172402299.png')
+    .setFooter({
+      text: 'Noctra Core • Sorteios exclusivos'
+    })
+    .setTimestamp();
+
+  await channel.send({
+    content: '🎁 **Novo aviso de sorteio na Noctra Core**',
+    embeds: [embed]
+  });
+
+  await interaction.reply({
+    content: `Anúncio enviado com sucesso em ${channel}.`,
+    ephemeral: true
+  });
+
+  return;
+}
   if (interaction.customId === 'modal_problema_site') {
   const obra = interaction.fields.getTextInputValue('obra_problema_site');
   const capitulo = interaction.fields.getTextInputValue('capitulo_problema_site') || 'Não informado.';
