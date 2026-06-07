@@ -424,7 +424,7 @@ const embed = new EmbedBuilder()
   .setTimestamp();
 
 await channel.send({
-  content: `<@&${config.memberRoleId}> ☾ **Nova atualização disponível na Noctra Core**`,
+  content: `☾ **Nova atualização disponível na Noctra Core**`,
   embeds: [embed],
   components: [row],
   allowedMentions: {
