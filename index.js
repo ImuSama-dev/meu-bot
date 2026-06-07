@@ -3269,7 +3269,7 @@ await channel.send({
     });
   }
 
-  const siteUrl = 'www.noctracore.com.br/';
+  const siteUrl = 'https://www.noctracore.com.br';
 
   const embed = new EmbedBuilder()
     .setColor('#111111')
