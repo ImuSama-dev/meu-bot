@@ -3269,7 +3269,7 @@ await channel.send({
     });
   }
 
-  const siteUrl = 'https://imusama-dev.github.io/noctra-site/index.html';
+  const siteUrl = 'www.noctracore.com.br/';
 
   const embed = new EmbedBuilder()
     .setColor('#111111')
