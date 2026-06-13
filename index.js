@@ -383,11 +383,8 @@ async function checkNewChapterUpdates(guild) {
   const capituloTitulo = `Capítulo ${manhwa.caps || manhwa.totalCaps || '?'}`;
   const capaUrl = manhwa.capa || manhwa.cover || manhwa.image || null;
 
-  const updatedAt = manhwa.updatedAt?.toDate
-    ? manhwa.updatedAt.toDate().toISOString()
-    : String(Date.now());
-
-  const itemId = `${manhwaId}:${updatedAt}`;
+ const chapterCount = Number(manhwa.caps || manhwa.totalCaps || 0);
+const itemId = `${manhwaId}:${chapterCount}`;
 
   const alreadySent = await Announcement.findOne({
     guildId: guild.id,
